@@ -1,8 +1,15 @@
 #!/usr/bin/env node
 
+import { createRequire } from "module"
+import { fileURLToPath } from "url"
+import path from "path"
+
+const require = createRequire(import.meta.url)
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+
 const childProcess = require("child_process")
 const fs = require("fs")
-const path = require("path")
 const os = require("os")
 
 const forwardedSignals = ["SIGINT", "SIGTERM", "SIGHUP"]
@@ -70,8 +77,8 @@ let arch = archMap[os.arch()]
 if (!arch) {
   arch = os.arch()
 }
-const base = "opencode-" + platform + "-" + arch
-const binary = platform === "windows" ? "opencode.exe" : "opencode"
+const base = "am-cli-" + platform + "-" + arch
+const binary = platform === "windows" ? "am-cli.exe" : "am-cli"
 
 function supportsAvx2() {
   if (arch !== "x64") return false
@@ -189,7 +196,7 @@ function findBinary(startDir) {
 const resolved = envPath || (fs.existsSync(cached) ? cached : findBinary(scriptDir))
 if (!resolved) {
   console.error(
-    "It seems that your package manager failed to install the right version of the opencode CLI for your platform. You can try manually installing " +
+    "It seems that your package manager failed to install the right version of the am-cli CLI for your platform. You can try manually installing " +
       names.map((n) => `\"${n}\"`).join(" or ") +
       " package",
   )

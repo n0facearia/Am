@@ -17,4 +17,23 @@
     "github-triage": false,
     "github-pr-search": false,
   },
+  // Shipped agent overrides
+  "agent": {
+    // chat: general-purpose conversational assistant.
+    // Never creates, edits, or deletes project files.
+    //
+    // contextMode controls what the agent is allowed to read:
+    //   "general"       (default) — ignores project files entirely, answers from
+    //                   knowledge and web search only.
+    //   "project-aware" — may read project files to answer questions about them,
+    //                   but still must never write or execute anything.
+    //
+    // To switch mode, tell the agent: "switch to project-aware mode" or
+    // "switch to general mode".
+    "chat": {
+      "description": "General-purpose conversational assistant. Not a project-building agent — it never creates, edits, or deletes project files. contextMode defaults to \"general\" (no project files read); say \"switch to project-aware mode\" to let it read project files for context.",
+      // contextMode default: "general"
+      // Override by telling the agent which mode you want at any time.
+    },
+  },
 }

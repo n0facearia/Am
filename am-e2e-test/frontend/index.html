@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRUD To-Do App with Auth</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Auth View -->
+        <div id="auth-view" class="view card">
+            <h2 id="auth-title">Login</h2>
+            <div id="auth-error" class="error hidden"></div>
+            <form id="auth-form">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" required placeholder="Enter username">
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" required placeholder="Enter password">
+                </div>
+                <button type="submit" id="auth-submit-btn">Login</button>
+            </form>
+            <p class="toggle-text">
+                <span id="toggle-message">Don't have an account?</span>
+                <a href="#" id="toggle-auth-mode">Register</a>
+            </p>
+        </div>
+
+        <!-- Dashboard View (To-Do CRUD) -->
+        <div id="dashboard-view" class="view card hidden">
+            <div class="header">
+                <h2>Welcome, <span id="user-display"></span>!</h2>
+                <button id="logout-btn" class="danger-btn">Logout</button>
+            </div>
+            
+            <form id="todo-form">
+                <div class="todo-input-group">
+                    <input type="text" id="todo-input" required placeholder="Add a new to-do...">
+                    <button type="submit">Add Task</button>
+                </div>
+            </form>
+
+            <div id="todo-error" class="error hidden"></div>
+
+            <ul id="todo-list">
+                <!-- To-Do items will be injected here dynamically -->
+            </ul>
+        </div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>

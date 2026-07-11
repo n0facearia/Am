@@ -1,0 +1,28 @@
+{
+  "agentModels": {
+    "plan": "google/gemini-1.5-flash",
+    "build": "google/gemini-1.5-pro",
+    "chat": "google/gemini-3.5-flash",
+    "frontend": "google/gemini-3.5-flash",
+    "backend": "google/gemini-3.5-flash",
+    "documentation": "google/gemini-3.5-flash",
+    "orchestrator": "google/gemini-3.5-flash"
+  },
+  "customInstructions": {
+    "plan": [],
+    "build": [],
+    "chat": [],
+    "frontend": [
+      ".opencode/agents-context/frontend/guidelines.md",
+      ".opencode/agents-context/frontend/style-guide.md"
+    ],
+    "backend": [".opencode/agents-context/backend/guidelines.md"],
+    "documentation": [".opencode/agents-context/documentation/style-guide.md"],
+    "orchestrator": []
+  },
+  "userProfile": {
+    "bio": "I am a cyber-cat from the year 3000, specializing in holographic interfaces.",
+    "preferredName": "CyberCat",
+    "experienceLevel": "Intergalactic"
+  }
+}

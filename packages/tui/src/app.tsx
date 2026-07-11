@@ -4,6 +4,31 @@ import { createDefaultOpenTuiKeymap } from "@opentui/keymap/opentui"
 import { Deferred, Effect } from "effect"
 import { Global } from "@opencode-ai/core/global"
 import { Flag } from "@opencode-ai/core/flag/flag"
+import fs from "fs"
+import path from "path"
+
+function readBrandConfig(startPath?: string) {
+  const fallback = {
+    productName: "OpenCode",
+    productTagline: "AI-powered development tool",
+  }
+  let current = startPath || process.cwd()
+  try {
+    for (;;) {
+      const file = path.join(current, "brand.config.json")
+      if (fs.existsSync(file)) {
+        const content = fs.readFileSync(file, "utf8")
+        return JSON.parse(content)
+      }
+      const parent = path.dirname(current)
+      if (parent === current) break
+      current = parent
+    }
+  } catch {
+    // Ignore
+  }
+  return fallback
+}
 import { InstallationVersion } from "@opencode-ai/core/installation/version"
 import { ClipboardProvider, useClipboard } from "./context/clipboard"
 import { ExitProvider, useExit } from "./context/exit"
@@ -453,25 +478,28 @@ function App(props: { onSnapshot?: () => Promise<string[]>; pluginHost: TuiPlugi
   createEffect(() => {
     if (!terminalTitleEnabled() || Flag.OPENCODE_DISABLE_TERMINAL_TITLE) return
 
+    const brandConfig = readBrandConfig(project?.instance?.directory?.())
+    const name = brandConfig.productName
+
     if (route.data.type === "home") {
-      renderer.setTerminalTitle("OpenCode")
+      renderer.setTerminalTitle(name)
       return
     }
 
     if (route.data.type === "session") {
       const session = sync.session.get(route.data.sessionID)
       if (!session || isDefaultTitle(session.title)) {
-        renderer.setTerminalTitle("OpenCode")
+        renderer.setTerminalTitle(name)
         return
       }
 
       const title = session.title.length > 40 ? session.title.slice(0, 37) + "..." : session.title
-      renderer.setTerminalTitle(`OC | ${title}`)
+      renderer.setTerminalTitle(`${name} | ${title}`)
       return
     }
 
     if (route.data.type === "plugin") {
-      renderer.setTerminalTitle(`OC | ${route.data.id}`)
+      renderer.setTerminalTitle(`${name} | ${route.data.id}`)
     }
   })
 
@@ -1090,6 +1118,7 @@ function App(props: { onSnapshot?: () => Promise<string[]>; pluginHost: TuiPlugi
       height={dimensions().height}
       flexDirection="column"
       backgroundColor={theme.background}
+      transition={250}
       onMouseDown={(evt) => {
         if (!Flag.OPENCODE_EXPERIMENTAL_DISABLE_COPY_ON_SELECT) return
         if (evt.button !== MouseButton.RIGHT) return

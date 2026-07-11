@@ -8,6 +8,7 @@ import { MessageV2 } from "../session/message-v2"
 import { Provider } from "@/provider/provider"
 import { InstanceState } from "@/effect/instance-state"
 import { MessageID, PartID } from "../session/schema"
+import { FSUtil } from "@opencode-ai/core/fs-util"
 import EXIT_DESCRIPTION from "./plan-exit.txt"
 
 export const Parameters = Schema.Struct({})
@@ -18,6 +19,7 @@ export const PlanExitTool = Tool.define(
     const session = yield* Session.Service
     const question = yield* Question.Service
     const provider = yield* Provider.Service
+    const fsys = yield* FSUtil.Service
 
     return {
       description: EXIT_DESCRIPTION,
@@ -27,23 +29,72 @@ export const PlanExitTool = Tool.define(
           const instance = yield* InstanceState.context
           const info = yield* session.get(ctx.sessionID)
           const plan = path.relative(instance.worktree, Session.plan(info, instance))
+
+          const checklistPath = path.join(instance.worktree, "PLAN_CHECKLIST.md")
+          const hasChecklist = yield* fsys.existsSafe(checklistPath)
+          const uncheckedItems: string[] = []
+          const checkedItems: string[] = []
+
+          if (hasChecklist) {
+            const content = yield* fsys.readFileStringSafe(checklistPath)
+            if (content) {
+              for (const line of content.split(/\r?\n/)) {
+                if (line.includes("- [ ]")) {
+                  const cleaned = line.replace(/^\s*(?:\d+\.\s*)?-\s*\[\s*\]\s*/, "")
+                  uncheckedItems.push(cleaned || line.trim())
+                } else if (line.includes("- [x]") || line.includes("- [X]")) {
+                  const cleaned = line.replace(/^\s*(?:\d+\.\s*)?-\s*\[[xX]\]\s*/, "")
+                  if (cleaned) checkedItems.push(cleaned)
+                }
+              }
+            }
+          }
+
+          let questionText: string
+          let headerText: string
+          let yesLabel: string
+          let yesDesc: string
+          let noLabel: string
+          let noDesc: string
+
+          if (uncheckedItems.length > 0) {
+            questionText = `Warning: The following checklist items are still unchecked:\n` +
+              uncheckedItems.map((item) => `• ${item}`).join("\n") +
+              `\n\nAre you sure you want to proceed to the build agent?`
+            headerText = "Unfinished Checklist"
+            yesLabel = "Yes, proceed anyway"
+            yesDesc = "Switch to build agent despite unchecked checklist items"
+            noLabel = "No, stay in plan mode"
+            noDesc = "Stay with plan agent to complete the checklist"
+          } else {
+            // All checked (or no checklist): show Start Build summary confirmation
+            const summary = buildSummaryBullets(checkedItems, hasChecklist)
+            questionText =
+              `Ready to start the build. Here is what will be implemented:\n\n${summary}\n\nProceed and switch to build mode?`
+            headerText = "Start Build"
+            yesLabel = "Yes, start build"
+            yesDesc = "Switch to build agent and begin implementing"
+            noLabel = "No, not yet"
+            noDesc = "Stay in plan mode"
+          }
+
           const answers = yield* question.ask({
             sessionID: ctx.sessionID,
             questions: [
               {
-                question: `Plan at ${plan} is complete. Would you like to switch to the build agent and start implementing?`,
-                header: "Build Agent",
+                question: questionText,
+                header: headerText,
                 custom: false,
                 options: [
-                  { label: "Yes", description: "Switch to build agent and start implementing the plan" },
-                  { label: "No", description: "Stay with plan agent to continue refining the plan" },
+                  { label: yesLabel, description: yesDesc },
+                  { label: noLabel, description: noDesc },
                 ],
               },
             ],
             tool: ctx.callID ? { messageID: ctx.messageID, callID: ctx.callID } : undefined,
           })
 
-          if (answers[0]?.[0] === "No") yield* new Question.RejectedError()
+          if (answers[0]?.[0] === noLabel) yield* new Question.RejectedError()
 
           const messages = yield* session.messages({ sessionID: ctx.sessionID }).pipe(Effect.orDie)
           const lastUser = messages.findLast((item) => item.info.role === "user" && item.info.model)
@@ -77,3 +128,14 @@ export const PlanExitTool = Tool.define(
     }
   }),
 )
+
+// Derives a 3-5 bullet "what will be built" summary from the checked checklist
+// items. Falls back to a generic message when no checklist is present.
+function buildSummaryBullets(checkedItems: string[], hasChecklist: boolean): string {
+  if (!hasChecklist || checkedItems.length === 0)
+    return "• Implement the plan as described in the plan document"
+
+  const bullets = checkedItems.slice(0, 5)
+  if (checkedItems.length > 5) bullets.push(`…and ${checkedItems.length - 5} more steps`)
+  return bullets.map((item) => `• ${item}`).join("\n")
+}

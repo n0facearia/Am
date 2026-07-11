@@ -7,6 +7,7 @@ import {
   generateSubtleSyntax,
   generateSyntax,
   generateSystem,
+  getAgentAccent,
   hasTheme,
   isTheme,
   resolveTheme,
@@ -17,8 +18,10 @@ import {
   terminalMode,
   tint,
   upsertTheme,
+  type Theme,
   type ThemeJson,
 } from "../theme"
+
 import { createEffect, createMemo, onCleanup, onMount } from "solid-js"
 import { createStore, produce } from "solid-js/store"
 import { createSimpleContext } from "./helper"
@@ -101,7 +104,7 @@ subscribeThemes((themes) => setStore("themes", themes))
 
 export const { use: useTheme, provider: ThemeProvider } = createSimpleContext({
   name: "Theme",
-  init: (props: { mode: "dark" | "light"; source?: ThemeSource }) => {
+  init: (props: { mode: "dark" | "light"; source?: ThemeSource; activeAgent?: () => string }) => {
     const renderer = useRenderer()
     const config = useTuiConfig()
     const kv = useKV()
@@ -255,15 +258,26 @@ export const { use: useTheme, provider: ThemeProvider } = createSimpleContext({
 
     const values = createMemo(() => {
       const active = store.themes[store.active]
-      if (active) return resolveTheme(active, store.mode)
+      let resolved = active
+        ? resolveTheme(active, store.mode)
+        : (function () {
+            const saved = kv.get("theme")
+            if (typeof saved === "string") {
+              const theme = store.themes[saved]
+              if (theme) return resolveTheme(theme, store.mode)
+            }
+            return resolveTheme(store.themes.opencode, store.mode)
+          })()
 
-      const saved = kv.get("theme")
-      if (typeof saved === "string") {
-        const theme = store.themes[saved]
-        if (theme) return resolveTheme(theme, store.mode)
+      const agentId = props.activeAgent?.()
+      if (agentId) {
+        resolved = {
+          ...resolved,
+          accent: getAgentAccent(agentId),
+        }
       }
 
-      return resolveTheme(store.themes.opencode, store.mode)
+      return resolved
     })
 
     createEffect(() => renderer.setBackgroundColor(values().background))

@@ -20,6 +20,31 @@ import {
 import * as Locale from "@/util/locale"
 import { go } from "@/cli/logo"
 import type { RunSplashTheme } from "./theme"
+import fs from "fs"
+import path from "path"
+
+function readBrandConfig(startPath?: string) {
+  const fallback = {
+    productName: "OpenCode",
+    productTagline: "AI-powered development tool",
+  }
+  let current = startPath || process.cwd()
+  try {
+    for (;;) {
+      const file = path.join(current, "brand.config.json")
+      if (fs.existsSync(file)) {
+        const content = fs.readFileSync(file, "utf8")
+        return JSON.parse(content)
+      }
+      const parent = path.dirname(current)
+      if (parent === current) break
+      current = parent
+    }
+  } catch {
+    // Ignore
+  }
+  return fallback
+}
 
 export const SPLASH_TITLE_LIMIT = 50
 export const SPLASH_TITLE_FALLBACK = "Untitled session"
@@ -194,7 +219,9 @@ function build(input: SplashWriterInput, kind: "entry" | "exit", ctx: Scrollback
       })
     }
 
-    push(lines, body_left, top, "OpenCode", right, undefined, TextAttributes.BOLD)
+    const brandConfig = readBrandConfig()
+    const brandLabel = `${brandConfig.productName} — ${brandConfig.productTagline}`
+    push(lines, body_left, top, brandLabel, right, undefined, TextAttributes.BOLD)
     if (input.detail) {
       push(
         lines,

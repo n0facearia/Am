@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Modus — productivity, rethought</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: #0f0f13;
+      color: #f5f5f7;
+      overflow-x: hidden;
+    }
+    .hero-gradient {
+      background: linear-gradient(135deg, #a78bfa 0%, #60a5fa 50%, #34d399 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .glow-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      backdrop-filter: blur(12px);
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .glow-card:hover {
+      border-color: rgba(167,139,250,0.3);
+      transform: translateY(-2px);
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #a78bfa, #7c3aed);
+      transition: opacity 0.2s, transform 0.2s;
+    }
+    .btn-primary:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+    .btn-secondary {
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.04);
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .btn-secondary:hover {
+      border-color: rgba(255,255,255,0.2);
+      transform: translateY(-1px);
+    }
+    .mockup-window {
+      background: #1a1a24;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .mockup-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .mockup-sidebar {
+      background: rgba(255,255,255,0.02);
+      border-right: 1px solid rgba(255,255,255,0.06);
+    }
+    .mockup-row:hover { background: rgba(255,255,255,0.03); }
+    .status-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+  </style>
+</head>
+<body>
+  <nav class="flex items-center justify-between px-8 py-5 max-w-7xl mx-auto">
+    <div class="flex items-center gap-2">
+      <i data-lucide="hexagon" class="w-6 h-6 text-violet-400"></i>
+      <span class="text-lg font-bold tracking-tight">Modus</span>
+    </div>
+    <div class="hidden md:flex items-center gap-8 text-sm text-zinc-400">
+      <a href="#" class="hover:text-white transition-colors">Features</a>
+      <a href="#" class="hover:text-white transition-colors">Pricing</a>
+      <a href="#" class="hover:text-white transition-colors">Changelog</a>
+      <a href="#" class="hover:text-white transition-colors">Docs</a>
+    </div>
+    <div class="flex items-center gap-3">
+      <button class="text-sm text-zinc-400 hover:text-white transition-colors px-4 py-2">Sign in</button>
+      <button class="btn-primary text-sm font-medium text-white px-5 py-2 rounded-lg">Get started</button>
+    </div>
+  </nav>
+
+  <main class="max-w-7xl mx-auto px-8 pt-24 pb-32">
+    <div class="text-center max-w-3xl mx-auto">
+      <div class="inline-flex items-center gap-2 bg-violet-500/10 border border-violet-500/20 rounded-full px-4 py-1.5 text-sm text-violet-300 mb-8">
+        <span class="status-dot bg-violet-400"></span>
+        Now in public beta
+      </div>
+      <h1 class="text-5xl md:text-7xl font-extrabold leading-tight tracking-tight mb-6">
+        <span class="hero-gradient">Work the way<br/>your mind works</span>
+      </h1>
+      <p class="text-lg md:text-xl text-zinc-400 max-w-2xl mx-auto mb-10 leading-relaxed">
+        Modus adapts to your natural rhythm — grouping deep work, resurfacing context, and protecting your focus so you ship more with less effort.
+      </p>
+      <div class="flex items-center justify-center gap-4">
+        <button class="btn-primary text-white font-semibold px-8 py-3.5 rounded-xl text-base flex items-center gap-2">
+          <i data-lucide="sparkles" class="w-5 h-5"></i>
+          Start free trial
+        </button>
+        <button class="btn-secondary text-zinc-300 font-medium px-8 py-3.5 rounded-xl text-base flex items-center gap-2">
+          <i data-lucide="play-circle" class="w-5 h-5"></i>
+          Watch demo
+        </button>
+      </div>
+      <p class="text-sm text-zinc-500 mt-4">No credit card required &middot; 14-day free trial</p>
+    </div>
+
+    <div class="mt-24 mockup-window max-w-5xl mx-auto shadow-2xl shadow-violet-500/5">
+      <div class="flex items-center gap-2 px-5 py-3.5 border-b border-white/5">
+        <div class="mockup-dot bg-red-400/70"></div>
+        <div class="mockup-dot bg-yellow-400/70"></div>
+        <div class="mockup-dot bg-green-400/70"></div>
+        <span class="text-xs text-zinc-600 ml-3">Modus — Today's Focus</span>
+      </div>
+      <div class="flex">
+        <div class="mockup-sidebar w-56 p-4 hidden sm:block">
+          <div class="flex items-center gap-2 mb-6 text-xs text-zinc-500 uppercase tracking-wider font-semibold">
+            <i data-lucide="layers" class="w-3.5 h-3.5"></i>
+            Projects
+          </div>
+          <div class="space-y-1">
+            <div class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-zinc-300 mockup-row cursor-default">
+              <i data-lucide="folder" class="w-4 h-4 text-violet-400"></i>
+              Q3 Roadmap
+            </div>
+            <div class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-zinc-300 mockup-row cursor-default">
+              <i data-lucide="folder" class="w-4 h-4 text-emerald-400"></i>
+              Design System
+            </div>
+            <div class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-zinc-300 mockup-row cursor-default">
+              <i data-lucide="folder" class="w-4 h-4 text-sky-400"></i>
+              API Docs
+            </div>
+            <div class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-zinc-300 mockup-row cursor-default">
+              <i data-lucide="folder" class="w-4 h-4 text-amber-400"></i>
+              Sprint 24
+            </div>
+          </div>
+        </div>
+        <div class="flex-1 p-5">
+          <div class="flex items-center justify-between mb-5">
+            <h2 class="text-sm font-semibold text-zinc-200">Today's Focus</h2>
+            <span class="text-xs text-zinc-500">3 tasks remaining</span>
+          </div>
+          <div class="space-y-2">
+            <div class="flex items-center gap-3 px-4 py-3 rounded-lg mockup-row">
+              <div class="w-4 h-4 rounded border border-zinc-600 flex-shrink-0"></div>
+              <div class="flex-1">
+                <p class="text-sm text-zinc-200">Draft Q3 roadmap review</p>
+                <p class="text-xs text-zinc-500 mt-0.5">Due today at 5pm</p>
+              </div>
+              <span class="status-dot bg-amber-400"></span>
+            </div>
+            <div class="flex items-center gap-3 px-4 py-3 rounded-lg mockup-row">
+              <div class="w-4 h-4 rounded border border-zinc-600 flex-shrink-0"></div>
+              <div class="flex-1">
+                <p class="text-sm text-zinc-200">Finalize component library migration</p>
+                <p class="text-xs text-zinc-500 mt-0.5">Due tomorrow</p>
+              </div>
+              <span class="status-dot bg-emerald-400"></span>
+            </div>
+            <div class="flex items-center gap-3 px-4 py-3 rounded-lg mockup-row">
+              <div class="w-4 h-4 rounded border border-zinc-600 flex-shrink-0"></div>
+              <div class="flex-1">
+                <p class="text-sm text-zinc-200">Review pull requests (4)</p>
+                <p class="text-xs text-zinc-500 mt-0.5">2 approved, 2 pending</p>
+              </div>
+              <span class="status-dot bg-sky-400"></span>
+            </div>
+          </div>
+          <div class="mt-5 pt-4 border-t border-white/5">
+            <div class="flex items-center gap-3 text-sm text-zinc-500">
+              <i data-lucide="plus" class="w-4 h-4"></i>
+              <span>Add task</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-28 grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+      <div class="glow-card rounded-xl p-6">
+        <div class="w-10 h-10 rounded-lg bg-violet-500/10 flex items-center justify-center mb-4">
+          <i data-lucide="brain" class="w-5 h-5 text-violet-400"></i>
+        </div>
+        <h3 class="text-base font-semibold mb-2">Adaptive Flow</h3>
+        <p class="text-sm text-zinc-400 leading-relaxed">Modus learns when you focus best and schedules deep work blocks automatically.</p>
+      </div>
+      <div class="glow-card rounded-xl p-6">
+        <div class="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center mb-4">
+          <i data-lucide="refresh-cw" class="w-5 h-5 text-emerald-400"></i>
+        </div>
+        <h3 class="text-base font-semibold mb-2">Context Resume</h3>
+        <p class="text-sm text-zinc-400 leading-relaxed">Pick up exactly where you left off. Every tab, note, and file restored in one click.</p>
+      </div>
+      <div class="glow-card rounded-xl p-6">
+        <div class="w-10 h-10 rounded-lg bg-sky-500/10 flex items-center justify-center mb-4">
+          <i data-lucide="shield" class="w-5 h-5 text-sky-400"></i>
+        </div>
+        <h3 class="text-base font-semibold mb-2">Focus Guard</h3>
+        <p class="text-sm text-zinc-400 leading-relaxed">Silence distractions, batch notifications, and reclaim hours of lost attention every week.</p>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>

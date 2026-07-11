@@ -1,4 +1,4 @@
-import { TextAttributes, type ScrollBoxRenderable } from "@opentui/core"
+import { FALLBACK_PALETTE, LIGHT_PALETTE } from "../theme"
 import { useKeyboard, useTerminalDimensions } from "@opentui/solid"
 import { createSignal, For, Show } from "solid-js"
 import { getScrollAcceleration } from "../util/scroll"
@@ -6,6 +6,7 @@ import { useClipboard } from "../context/clipboard"
 import { InstallationVersion } from "@opencode-ai/core/installation/version"
 import { useExit } from "../context/exit"
 import { describeOS, describeTerminal } from "../util/system"
+import { TextAttributes, type ScrollBoxRenderable } from "@opentui/core"
 
 export function ErrorComponent(props: { error: Error; reset: () => void; mode?: "dark" | "light" }) {
   const term = useTerminalDimensions()
@@ -17,28 +18,8 @@ export function ErrorComponent(props: { error: Error; reset: () => void; mode?: 
   // theme context may be the thing that crashed.
   const isLight = props.mode === "light"
   const colors = isLight
-    ? {
-        bg: "#ffffff",
-        element: "#f5f5f5",
-        borderSubtle: "#d4d4d4",
-        text: "#1a1a1a",
-        muted: "#8a8a8a",
-        primary: "#3b7dd8",
-        onPrimary: "#ffffff",
-        error: "#d1383d",
-        success: "#3d9a57",
-      }
-    : {
-        bg: "#0a0a0a",
-        element: "#1e1e1e",
-        borderSubtle: "#3c3c3c",
-        text: "#eeeeee",
-        muted: "#808080",
-        primary: "#fab283",
-        onPrimary: "#0a0a0a",
-        error: "#e06c75",
-        success: "#7fd88f",
-      }
+    ? LIGHT_PALETTE
+    : FALLBACK_PALETTE
 
   const message = props.error.message || "An unknown error occurred."
   const stack = props.error.stack || "No stack trace available."

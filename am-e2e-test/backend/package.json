@@ -1,0 +1,8 @@
+{
+  "name": "am-backend",
+  "version": "1.0.0",
+  "main": "server.ts",
+  "dependencies": {
+    "jose": "^5.2.4"
+  }
+}

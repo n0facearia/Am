@@ -24,7 +24,7 @@ import { useEvent } from "../../context/event"
 import { SplitBorder } from "../../ui/border"
 import { useTuiPaths, useTuiTerminalEnvironment } from "../../context/runtime"
 import { Spinner } from "../../component/spinner"
-import { createSyntaxStyleMemo, generateSubtleSyntax, selectedForeground, useTheme } from "../../context/theme"
+import { createSyntaxStyleMemo, generateSubtleSyntax, selectedForeground, useTheme, ThemeProvider } from "../../context/theme"
 import { BoxRenderable, ScrollBoxRenderable, addDefaultParsers, TextAttributes, RGBA } from "@opentui/core"
 import { Prompt, type PromptRef } from "../../component/prompt"
 import type {
@@ -55,6 +55,7 @@ import { DialogForkFromTimeline } from "./dialog-fork-from-timeline"
 import { DialogSessionRename } from "../../component/dialog-session-rename"
 import { Sidebar } from "./sidebar"
 import { SubagentFooter } from "./subagent-footer.tsx"
+import { PersonaSwitcher } from "../../component/persona-switcher"
 import { filetype } from "../../util/filetype"
 import parsers from "../../parsers-config"
 import { errorMessage } from "../../util/error"
@@ -79,6 +80,7 @@ import { collapseToolOutput } from "../../util/collapse-tool-output"
 import { usePluginRuntime } from "../../plugin/runtime"
 import { DialogRetryAction } from "../../component/dialog-retry-action"
 import { getRevertDiffFiles } from "../../util/revert-diff"
+import { Mascot, type MascotState } from "../../component/mascot"
 import { OPENCODE_BASE_MODE, useBindings, useCommandShortcut, useOpencodeKeymap } from "../../keymap"
 import { usePathFormatter } from "../../context/path-format"
 import { LocationProvider } from "../../context/location"
@@ -176,6 +178,20 @@ function use() {
 }
 
 export function Session() {
+  const local = useLocal()
+  const activeAgent = createMemo(() => local.agent.current())
+
+  return (
+    <ThemeProvider
+      mode="dark"
+      activeAgent={activeAgent}
+    >
+      <SessionContent />
+    </ThemeProvider>
+  )
+}
+
+function SessionContent() {
   const setEpilogue = useEpilogue()
   const clipboard = useClipboard()
   const writeExport = async (file: string, content: string) => {
@@ -316,22 +332,28 @@ export function Session() {
     })
   })
 
-  let lastSwitch: string | undefined = undefined
-  event.on("message.part.updated", (evt) => {
-    const part = evt.properties.part
-    if (part.type !== "tool") return
-    if (part.sessionID !== route.sessionID) return
-    if (part.state.status !== "completed") return
-    if (part.id === lastSwitch) return
+  const [mascotState, setMascotState] = createSignal<MascotState>("idle")
 
-    if (part.tool === "plan_exit") {
-      local.agent.set("build")
-      lastSwitch = part.id
-    } else if (part.tool === "plan_enter") {
-      local.agent.set("plan")
-      lastSwitch = part.id
+  createEffect(() => {
+    if (foregroundTasks().length > 0 || pending()) {
+      setMascotState("thinking")
+    } else {
+      setMascotState("idle")
     }
   })
+
+  event.on("message.part.updated", (evt) => {
+    const part = evt.properties.part
+    if (part.type !== "tool" || part.state.status !== "completed") return
+    if (part.state.error) {
+      setMascotState("error")
+      setTimeout(() => setMascotState("idle"), 3000)
+    } else {
+      setMascotState("success")
+      setTimeout(() => setMascotState("idle"), 2000)
+    }
+  })
+
 
   let seeded = false
   let scroll: ScrollBoxRenderable
@@ -1163,9 +1185,11 @@ export function Session() {
         }}
       >
         <box flexDirection="row" flexGrow={1} minHeight={0}>
-          <box flexGrow={1} minHeight={0} paddingBottom={1} paddingLeft={2} paddingRight={2} gap={1}>
-            <Show when={session()}>
-              <scrollbox
+              <box flexGrow={1} minHeight={0} paddingBottom={1} paddingLeft={2} paddingRight={2} gap={1}>
+                <PersonaSwitcher />
+                <Show when={session()}>
+                  <scrollbox
+
                 ref={(r) => (scroll = r)}
                 viewportOptions={{
                   paddingRight: showScrollbar() ? 1 : 0,
@@ -1296,26 +1320,29 @@ export function Session() {
                   <SubagentFooter />
                 </Show>
                 <Show when={visible()}>
-                  <pluginRuntime.Slot
-                    name="session_prompt"
-                    mode="replace"
-                    session_id={route.sessionID}
-                    visible={visible()}
-                    disabled={disabled()}
-                    on_submit={toBottom}
-                    ref={bind}
-                  >
-                    <Prompt
+                  <box flexDirection="row" alignItems="center" gap={2}>
+                    <Mascot state={mascotState()} />
+                    <pluginRuntime.Slot
+                      name="session_prompt"
+                      mode="replace"
+                      session_id={route.sessionID}
                       visible={visible()}
-                      ref={bind}
                       disabled={disabled()}
-                      onSubmit={() => {
-                        toBottom()
-                      }}
-                      sessionID={route.sessionID}
-                      right={<pluginRuntime.Slot name="session_prompt_right" session_id={route.sessionID} />}
-                    />
-                  </pluginRuntime.Slot>
+                      on_submit={toBottom}
+                      ref={bind}
+                    >
+                      <Prompt
+                        visible={visible()}
+                        ref={bind}
+                        disabled={disabled()}
+                        onSubmit={() => {
+                          toBottom()
+                        }}
+                        sessionID={route.sessionID}
+                        right={<pluginRuntime.Slot name="session_prompt_right" session_id={route.sessionID} />}
+                      />
+                    </pluginRuntime.Slot>
+                  </box>
                 </Show>
               </box>
             </Show>

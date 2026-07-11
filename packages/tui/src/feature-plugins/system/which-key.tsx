@@ -98,16 +98,18 @@ function ink(api: TuiPluginApi, name: string, fallback: string): Color {
   return fallback
 }
 
+import { FALLBACK_PALETTE } from "../../theme"
+
 function skin(api: TuiPluginApi): Skin {
   return {
-    panel: ink(api, "backgroundMenu", "#1c1c1c"),
-    text: ink(api, "text", "#f0f0f0"),
-    muted: ink(api, "textMuted", "#a5a5a5"),
-    subtle: ink(api, "borderSubtle", "#6f6f6f"),
-    key: ink(api, "warning", "#ffd75f"),
-    accent: ink(api, "primary", "#5f87ff"),
-    tab: ink(api, "primary", "#5f87ff"),
-    tabText: ink(api, "selectedListItemText", "#ffffff"),
+    panel: ink(api, "backgroundMenu", FALLBACK_PALETTE.bg),
+    text: ink(api, "text", FALLBACK_PALETTE.text),
+    muted: ink(api, "textMuted", FALLBACK_PALETTE.muted),
+    subtle: ink(api, "borderSubtle", FALLBACK_PALETTE.borderSubtle),
+    key: ink(api, "warning", FALLBACK_PALETTE.primary),
+    accent: ink(api, "primary", FALLBACK_PALETTE.primary),
+    tab: ink(api, "primary", FALLBACK_PALETTE.primary),
+    tabText: ink(api, "selectedListItemText", FALLBACK_PALETTE.onPrimary),
   }
 }
 

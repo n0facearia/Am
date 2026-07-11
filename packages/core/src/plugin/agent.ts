@@ -12,6 +12,28 @@ const TRUNCATION_GLOB = path.join(Global.Path.data, "tool-output", "*")
 const BUILD_SYSTEM =
   "You are an AI coding agent. Help the user accomplish software engineering tasks by inspecting the workspace, making targeted changes, and using tools according to the configured permissions."
 
+const PROMPT_CHAT = `You are a general-purpose conversational assistant. You are NOT a project-building agent.
+
+You operate in one of two context modes, controlled by the user:
+
+## contextMode: "general" (default)
+- Do not read, reference, or mention any files in the current project.
+- Answer questions using only your own knowledge and web search when needed.
+- If the user asks about project code, remind them to switch to project-aware mode.
+
+## contextMode: "project-aware"
+- You MAY read files in the current project to answer questions about them.
+- You MUST NOT create, edit, delete, move, or in any way modify any file.
+- You MUST NOT run shell commands, execute code, or trigger builds.
+- Use file reads only to give accurate, grounded answers about the existing code.
+
+Regardless of mode:
+- Never create, edit, or delete files under any circumstances.
+- Never run shell commands or execute code.
+- Never switch the user to build or plan mode.
+- If the user asks you to make changes, explain that they should use the build agent instead.
+- Stay conversational, concise, and helpful.`
+
 const PROMPT_EXPLORE = `You are a file search specialist. You excel at thoroughly navigating and exploring codebases.
 
 Your strengths:
@@ -121,8 +143,49 @@ export const Plugin = define({
       { action: "read", resource: "*.env.example", effect: "allow" },
     ]
 
+    const settingsText = yield* fs.readFileStringSafe(path.join(worktree, "settings.json"))
+    const settings = settingsText ? JSON.parse(settingsText) : null
+
+    const customInstructions = settings?.customInstructions ?? {}
+    const instructionContents = new Map<string, string>()
+    for (const [role, paths] of Object.entries(customInstructions)) {
+      if (Array.isArray(paths)) {
+        let combined = ""
+        for (const p of paths) {
+          const content = yield* fs.readFileStringSafe(path.join(worktree, p))
+          if (content) combined += `\n${content}\n`
+        }
+        instructionContents.set(role, combined)
+      }
+    }
+
+    const profile = settings?.userProfile
+    const profilePrompt = profile
+      ? `\nUser Profile:\n- Name: ${profile.preferredName}\n- Bio: ${profile.bio}\n- Experience: ${profile.experienceLevel}`
+      : ""
+
     yield* ctx.agent.transform((draft) => {
+      const agentModels = settings?.agentModels ?? {}
+      const allAgentIDs = Array.from(draft.agents.keys())
+
+      for (const id of allAgentIDs) {
+        draft.update(id, (item) => {
+          const role = id.toString()
+          if (agentModels[role]) {
+            item.model = agentModels[role]
+          }
+
+          const instructions = instructionContents.get(role)
+          if (instructions) {
+            item.system = (item.system ?? "") + "\n" + instructions
+          }
+
+          item.system = (item.system ?? "") + profilePrompt
+        })
+      }
+
       draft.update(AgentV2.defaultID, (item) => {
+
         item.description = "The default agent. Executes tools based on configured permissions."
         item.system ??= BUILD_SYSTEM
         item.mode = "primary"
@@ -144,12 +207,42 @@ export const Plugin = define({
             { action: "external_directory", resource: path.join(Global.Path.data, "plans", "*"), effect: "allow" },
             { action: "edit", resource: "*", effect: "deny" },
             { action: "edit", resource: path.join(".opencode", "plans", "*.md"), effect: "allow" },
+            { action: "edit", resource: "PLAN_CHECKLIST.md", effect: "allow" },
             {
               action: "edit",
               resource: path.relative(worktree, path.join(Global.Path.data, "plans", "*.md")),
               effect: "allow",
             },
           ]),
+        )
+      })
+
+      draft.update(AgentV2.ID.make("chat"), (item) => {
+        item.description =
+          'General-purpose conversational assistant. Not a project-building agent — it never creates, edits, or deletes project files. Supports two context modes: "general" (default, no project files read) and "project-aware" (may read project files to answer questions, but never writes them). Switch modes by telling the agent which mode you want.'
+        item.system = PROMPT_CHAT
+        item.mode = "primary"
+        item.permissions.push(
+          ...PermissionV2.merge(
+            defaults,
+            [
+              // Deny all write and execution tools — chat can never modify the project
+              { action: "edit", resource: "*", effect: "deny" },
+              { action: "write", resource: "*", effect: "deny" },
+              { action: "patch", resource: "*", effect: "deny" },
+              { action: "shell", resource: "*", effect: "deny" },
+              { action: "bash", resource: "*", effect: "deny" },
+              { action: "execute", resource: "*", effect: "deny" },
+              { action: "task", resource: "*", effect: "deny" },
+              { action: "plan_enter", resource: "*", effect: "deny" },
+              { action: "plan_exit", resource: "*", effect: "deny" },
+              // Reads are allowed so the model can honour project-aware mode;
+              // the system prompt instructs it to skip reads in general mode.
+              { action: "read", resource: "*", effect: "allow" },
+              { action: "glob", resource: "*", effect: "allow" },
+              { action: "grep", resource: "*", effect: "allow" },
+            ],
+          ),
         )
       })
 

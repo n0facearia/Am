@@ -238,7 +238,21 @@ export function upsertTheme(name: string, theme: unknown) {
   return true
 }
 
-export function resolveTheme(theme: ThemeJson, mode: "dark" | "light") {
+export const AGENT_ACCENTS: Record<string, HexColor> = {
+  plan: "#EAB308",
+  build: "#10B981",
+  chat: "#3B82F6",
+  frontend: "#EC4899",
+  backend: "#8B5CF6",
+  documentation: "#6B7280",
+}
+
+export function getAgentAccent(agentId: string): RGBA {
+  const hex = AGENT_ACCENTS[agentId] ?? "#6B7280"
+  return RGBA.fromHex(hex)
+}
+
+export function resolveTheme(theme: ThemeJson, mode: "dark" | "light"): Theme {
   const defs = theme.defs ?? {}
   function resolveColor(c: ColorValue, chain: string[] = []): RGBA {
     if (c instanceof RGBA) return c
@@ -1086,4 +1100,27 @@ function getSyntaxRules(theme: Theme) {
       },
     },
   ]
+}
+export const LIGHT_PALETTE = {
+  bg: "#ffffff",
+  element: "#f5f5f5",
+  borderSubtle: "#d4d4d4",
+  text: "#1a1a1a",
+  muted: "#8a8a8a",
+  primary: "#3b7dd8",
+  onPrimary: "#ffffff",
+  error: "#d1383d",
+  success: "#3d9a57",
+}
+
+export const FALLBACK_PALETTE = {
+  bg: "#0a0a0a",
+  element: "#1e1e1e",
+  borderSubtle: "#3c3c3c",
+  text: "#eeeeee",
+  muted: "#808080",
+  primary: "#fab283",
+  onPrimary: "#0a0a0a",
+  error: "#e06c75",
+  success: "#7fd88f",
 }

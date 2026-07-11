@@ -1,0 +1,214 @@
+{
+  "lastUpdated": "2026-07-11T17:50:00Z",
+  "files": [
+    {
+      "path": "opencode.json",
+      "owner": "shared",
+      "lastChangedBy": "opencode",
+      "summary": "OpenCode global configuration including plugins and agent definitions.",
+      "dependsOn": []
+    },
+    {
+      "path": "AGENTS.md",
+      "owner": "shared",
+      "lastChangedBy": "opencode",
+      "summary": "Style guide, commit conventions, and agent rules for the project.",
+      "dependsOn": []
+    },
+    {
+      "path": "CONTEXT.md",
+      "owner": "shared",
+      "lastChangedBy": "unknown",
+      "summary": "Detailed domain terminology and architectural context for the session runtime.",
+      "dependsOn": []
+    },
+    {
+      "path": "ENGINE_MAP.md",
+      "owner": "shared",
+      "lastChangedBy": "unknown",
+      "summary": "Map of the project directory structure and entry points.",
+      "dependsOn": []
+    },
+    {
+      "path": "README.md",
+      "owner": "shared",
+      "lastChangedBy": "unknown",
+      "summary": "Main project overview and installation guide.",
+      "dependsOn": []
+    },
+    {
+      "path": "packages/app",
+      "owner": "frontend",
+      "lastChangedBy": "unknown",
+      "summary": "Main web application built with SolidJS.",
+      "dependsOn": [
+        "packages/core",
+        "packages/schema",
+        "packages/sdk",
+        "packages/session-ui",
+        "packages/ui"
+      ]
+    },
+    {
+      "path": "packages/ui",
+      "owner": "frontend",
+      "lastChangedBy": "unknown",
+      "summary": "Shared UI component library.",
+      "dependsOn": []
+    },
+    {
+      "path": "packages/tui",
+      "owner": "frontend",
+      "lastChangedBy": "unknown",
+      "summary": "Terminal User Interface built with opentui.",
+      "dependsOn": [
+        "packages/core",
+        "packages/plugin",
+        "packages/sdk",
+        "packages/ui"
+      ]
+    },
+    {
+      "path": "packages/web",
+      "owner": "frontend",
+      "lastChangedBy": "unknown",
+      "summary": "Marketing and documentation site built with Astro.",
+      "dependsOn": []
+    },
+    {
+      "path": "packages/session-ui",
+      "owner": "frontend",
+      "lastChangedBy": "unknown",
+      "summary": "UI components specific to agent sessions.",
+      "dependsOn": [
+        "packages/core",
+        "packages/sdk",
+        "packages/ui"
+      ]
+    },
+    {
+      "path": "packages/client",
+      "owner": "frontend",
+      "lastChangedBy": "unknown",
+      "summary": "Generated HTTP API client.",
+      "dependsOn": [
+        "packages/schema",
+        "packages/protocol"
+      ]
+    },
+    {
+      "path": "packages/desktop",
+      "owner": "frontend",
+      "lastChangedBy": "unknown",
+      "summary": "Electron desktop wrapper for the web app.",
+      "dependsOn": [
+        "packages/app",
+        "packages/ui"
+      ]
+    },
+    {
+      "path": "test-project",
+      "owner": "frontend",
+      "lastChangedBy": "opencode",
+      "summary": "Test project for verifying frontend output (e.g., Modus hero section).",
+      "dependsOn": []
+    },
+    {
+      "path": "packages/server",
+      "owner": "backend",
+      "lastChangedBy": "unknown",
+      "summary": "HTTP API server implementing the protocol handlers.",
+      "dependsOn": [
+        "packages/core",
+        "packages/protocol"
+      ]
+    },
+    {
+      "path": "packages/core",
+      "owner": "backend",
+      "lastChangedBy": "unknown",
+      "summary": "Central engine core for session and tool management.",
+      "dependsOn": [
+        "packages/schema",
+        "packages/llm",
+        "packages/plugin",
+        "packages/effect-drizzle-sqlite",
+        "packages/effect-sqlite-node"
+      ]
+    },
+    {
+      "path": "packages/schema",
+      "owner": "backend",
+      "lastChangedBy": "unknown",
+      "summary": "Foundation layer defining wire and storage schemas.",
+      "dependsOn": []
+    },
+    {
+      "path": "packages/protocol",
+      "owner": "backend",
+      "lastChangedBy": "unknown",
+      "summary": "API protocol definitions and contracts.",
+      "dependsOn": [
+        "packages/schema"
+      ]
+    },
+    {
+      "path": "packages/plugin",
+      "owner": "backend",
+      "lastChangedBy": "unknown",
+      "summary": "Plugin SDK for extending OpenCode capabilities.",
+      "dependsOn": [
+        "packages/sdk"
+      ]
+    },
+    {
+      "path": "packages/opencode",
+      "owner": "backend",
+      "lastChangedBy": "unknown",
+      "summary": "Main CLI entry point composing the server, TUI, and engine.",
+      "dependsOn": [
+        "packages/codemode",
+        "packages/llm",
+        "packages/plugin",
+        "packages/protocol",
+        "packages/schema",
+        "packages/sdk",
+        "packages/script",
+        "packages/server",
+        "packages/tui"
+      ]
+    },
+    {
+      "path": "packages/sdk",
+      "owner": "backend",
+      "lastChangedBy": "unknown",
+      "summary": "Legacy JavaScript SDK for OpenCode integration.",
+      "dependsOn": []
+    },
+    {
+      "path": "packages/sdk-next",
+      "owner": "backend",
+      "lastChangedBy": "unknown",
+      "summary": "Next-generation SDK composing client and core.",
+      "dependsOn": [
+        "packages/client",
+        "packages/core",
+        "packages/server"
+      ]
+    },
+    {
+      "path": "packages/llm",
+      "owner": "backend",
+      "lastChangedBy": "unknown",
+      "summary": "LLM provider abstraction and routing system.",
+      "dependsOn": [
+        "packages/schema"
+      ]
+    }
+  ],
+  "openQuestions": [
+    "When is the legacy @opencode-ai/sdk expected to be fully replaced by sdk-next?",
+    "Are there any overlapping responsibilities between packages/cli and packages/opencode?",
+    "Is the current split between frontend and backend paths comprehensive for all 32 packages?"
+  ]
+}

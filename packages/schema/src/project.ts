@@ -33,6 +33,7 @@ export const Info = Schema.Struct({
   worktree: Schema.String,
   vcs: optional(Vcs),
   name: optional(Schema.String),
+  description: optional(Schema.String),
   icon: optional(Icon),
   commands: optional(Commands),
   time: Time,

@@ -1,0 +1,1 @@
+Fetch a component, icon, font, or photo asset from pre-approved domains. On success, the asset is saved in .am/asset-cache/ as a cache. On failure, the tool attempts to retrieve the asset from .am/asset-cache/.

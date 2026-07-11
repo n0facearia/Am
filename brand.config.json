@@ -1,0 +1,15 @@
+{
+  "productName": "AM",
+  "productTagline": "Artificial Machine",
+  "primaryColor": "#ff0000",
+  "accentColorsByMode": {
+    "plan": "#EAB308",
+    "build": "#10B981",
+    "chat": "#3B82F6",
+    "frontend": "#EC4899",
+    "backend": "#8B5CF6",
+    "documentation": "#6B7280"
+  },
+  "logoPath": "./packages/ui/src/assets/icons/provider/opencode.svg",
+  "mascotPath": "./packages/ui/src/assets/images/mascot.png"
+}
