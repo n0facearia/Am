@@ -4,6 +4,7 @@ import path from "path"
 import { define } from "./internal"
 import { Effect } from "effect"
 import { AgentV2 } from "../agent"
+import { FSUtil } from "../fs-util"
 import { Global } from "../global"
 import { Location } from "../location"
 import { PermissionV2 } from "../permission"
@@ -123,6 +124,7 @@ export const Plugin = define({
   id: "agent",
   effect: Effect.fn(function* (ctx) {
     const location = yield* Location.Service
+    const fs = yield* FSUtil.Service
     const worktree = location.directory
     const whitelistedDirs = [TRUNCATION_GLOB, path.join(Global.Path.tmp, "*")]
     const readonlyExternalDirectory: PermissionV2.Ruleset = [
@@ -143,7 +145,9 @@ export const Plugin = define({
       { action: "read", resource: "*.env.example", effect: "allow" },
     ]
 
-    const settingsText = yield* fs.readFileStringSafe(path.join(worktree, "settings.json"))
+    const settingsText = yield* fs.readFileStringSafe(path.join(worktree, "settings.json")).pipe(
+      Effect.catch(() => Effect.succeed(undefined)),
+    )
     const settings = settingsText ? JSON.parse(settingsText) : null
 
     const customInstructions = settings?.customInstructions ?? {}
@@ -152,7 +156,9 @@ export const Plugin = define({
       if (Array.isArray(paths)) {
         let combined = ""
         for (const p of paths) {
-          const content = yield* fs.readFileStringSafe(path.join(worktree, p))
+          const content = yield* fs.readFileStringSafe(path.join(worktree, p)).pipe(
+            Effect.catch(() => Effect.succeed(undefined)),
+          )
           if (content) combined += `\n${content}\n`
         }
         instructionContents.set(role, combined)
@@ -166,16 +172,15 @@ export const Plugin = define({
 
     yield* ctx.agent.transform((draft) => {
       const agentModels = settings?.agentModels ?? {}
-      const allAgentIDs = Array.from(draft.agents.keys())
+      const allAgentIDs = draft.list().map((item) => item.id)
 
       for (const id of allAgentIDs) {
         draft.update(id, (item) => {
-          const role = id.toString()
-          if (agentModels[role]) {
-            item.model = agentModels[role]
+          if (agentModels[id]) {
+            item.model = agentModels[id]
           }
 
-          const instructions = instructionContents.get(role)
+          const instructions = instructionContents.get(id)
           if (instructions) {
             item.system = (item.system ?? "") + "\n" + instructions
           }

@@ -2,6 +2,7 @@ import { describe, expect } from "bun:test"
 import { Effect, Exit, Scope } from "effect"
 import { AgentV2 } from "@opencode-ai/core/agent"
 import { AppNodeBuilder } from "@opencode-ai/core/effect/app-node-builder"
+import { FSUtil } from "@opencode-ai/core/fs-util"
 import { Location } from "@opencode-ai/core/location"
 import { AgentPlugin } from "@opencode-ai/core/plugin/agent"
 import { AbsolutePath } from "@opencode-ai/core/schema"
@@ -111,11 +112,15 @@ describe("AgentV2", () => {
           Location.Service,
           Location.Service.of(location({ directory: AbsolutePath.make("/project") })),
         ),
+        Effect.provideService(FSUtil.Service, {
+          readFileStringSafe: () => Effect.succeed(undefined),
+        } as unknown as FSUtil.Interface),
       )
 
       const agents = yield* agent.all()
       expect(agents.map((item) => String(item.id)).sort()).toEqual([
         "build",
+        "chat",
         "compaction",
         "explore",
         "general",
