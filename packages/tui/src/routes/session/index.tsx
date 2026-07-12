@@ -184,7 +184,7 @@ export function Session() {
   return (
     <ThemeProvider
       mode="dark"
-      activeAgent={activeAgent}
+      activeAgent={() => activeAgent()?.name ?? ""}
     >
       <SessionContent />
     </ThemeProvider>
@@ -344,11 +344,11 @@ function SessionContent() {
 
   event.on("message.part.updated", (evt) => {
     const part = evt.properties.part
-    if (part.type !== "tool" || part.state.status !== "completed") return
-    if (part.state.error) {
+    if (part.type !== "tool") return
+    if (part.state.status === "error") {
       setMascotState("error")
       setTimeout(() => setMascotState("idle"), 3000)
-    } else {
+    } else if (part.state.status === "completed") {
       setMascotState("success")
       setTimeout(() => setMascotState("idle"), 2000)
     }

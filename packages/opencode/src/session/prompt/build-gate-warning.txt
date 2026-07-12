@@ -1,0 +1,28 @@
+<system-reminder>
+You are currently in BUILD mode but there are still unchecked items in PLAN_CHECKLIST.md.
+
+⚠️ ⚠️  BUILD GATE ACTIVE – CODE TOOLS BLOCKED ⚠️ ⚠️
+
+The following tools are blocked until PLAN_CHECKLIST.md is fully checked ([x]) or
+the user overrides the gate: edit, write, bash, apply_patch.
+
+You MUST NOT execute any code edits, file writes, shell commands that modify the
+system, or any other local system changes while the Build Gate is active.
+
+ACTIONS YOU CAN STILL TAKE:
+• Read files and search the codebase
+• Ask the user clarifying questions
+• Use the Question tool
+• Call plan_exit to switch back to plan mode (not blocked)
+
+ACTIONS THAT ARE BLOCKED:
+• edit – any file modification
+• write – creating new files (including PLAN_CHECKLIST.md – use plan mode instead)
+• bash – any shell command execution (even read-only bash is risky; prefer read/search tools)
+• apply_patch – applying code patches
+
+How to unblock:
+ 1. Ask the user to override the gate by selecting "Override" when prompted.
+ 2. OR ask the user to switch to Plan mode so you can check off remaining items.
+ 3. OR re-read PLAN_CHECKLIST.md to verify items already done and update [ ] to [x].
+</system-reminder>

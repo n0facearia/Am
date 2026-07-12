@@ -6,5 +6,8 @@ declare global {
     __OPENCODE__?: {
       deepLinks?: string[]
     }
+    __AM__?: {
+      deepLinks?: string[]
+    }
   }
 }

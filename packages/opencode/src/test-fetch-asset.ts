@@ -1,9 +1,11 @@
 import { ToolRegistry } from "./tool/registry"
 import { bootstrap } from "./cli/bootstrap"
+import { AppRuntime } from "./effect/app-runtime"
+import { SessionID, MessageID } from "./session/schema"
 import { Effect } from "effect"
 
 await bootstrap(process.cwd(), async () => {
-  await Effect.runPromise(
+  await AppRuntime.runPromise(
     Effect.gen(function* () {
       const registry = yield* ToolRegistry.Service
       const tools = yield* registry.all()
@@ -18,8 +20,8 @@ await bootstrap(process.cwd(), async () => {
         const res1 = yield* fetchAsset.execute(
           { url: "https://lucide.dev/package.json" },
           {
-            sessionID: "test-session",
-            messageID: "test-message",
+            sessionID: SessionID.make("ses_test-session"),
+            messageID: MessageID.make("msg_test-message"),
             agent: "test-agent",
             abort: new AbortController().signal,
             messages: [],
@@ -38,8 +40,8 @@ await bootstrap(process.cwd(), async () => {
         const res2 = yield* fetchAsset.execute(
           { url: "https://google.com/" },
           {
-            sessionID: "test-session",
-            messageID: "test-message",
+            sessionID: SessionID.make("ses_test-session"),
+            messageID: MessageID.make("msg_test-message"),
             agent: "test-agent",
             abort: new AbortController().signal,
             messages: [],

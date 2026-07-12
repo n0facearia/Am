@@ -31,7 +31,34 @@ export const PlanExitTool = Tool.define(
           const plan = path.relative(instance.worktree, Session.plan(info, instance))
 
           const checklistPath = path.join(instance.worktree, "PLAN_CHECKLIST.md")
-          const hasChecklist = yield* fsys.existsSafe(checklistPath)
+          let hasChecklist = yield* fsys.existsSafe(checklistPath)
+
+          // Auto-generate PLAN_CHECKLIST.md from the plan file if it doesn't exist yet.
+          if (!hasChecklist) {
+            const planPath = path.join(instance.worktree, plan)
+            const planContent = yield* fsys.readFileStringSafe(planPath)
+            if (planContent) {
+              const tasks: string[] = []
+              for (const line of planContent.split(/\r?\n/)) {
+                const trimmed = line.trim()
+                // Match markdown list items that look like actionable steps
+                // (not headers, not code fences, not empty lines).
+                const listMatch = trimmed.match(/^(?:[-*]\s+|\d+[.)]\s+)(.+)/)
+                if (listMatch && !trimmed.startsWith("```") && !trimmed.startsWith("#")) {
+                  const desc = listMatch[1].replace(/^-\s+/, "").trim()
+                  if (desc.length > 5 && !desc.startsWith("[") && !desc.startsWith(">")) {
+                    tasks.push(desc)
+                  }
+                }
+              }
+              if (tasks.length > 0) {
+                const checklist = tasks.map((t) => `- [ ] ${t}`).join("\n") + "\n"
+                yield* fsys.writeFileString(checklistPath, checklist)
+                hasChecklist = true
+              }
+            }
+          }
+
           const uncheckedItems: string[] = []
           const checkedItems: string[] = []
 

@@ -7,6 +7,9 @@ const state = (kind: "starting" | "ready" | "failed" | "stopped"): WslServersSta
   installed: [],
   online: [],
   distroProbes: {},
+  // `opencodeChecks` is preserved as-is for backward compatibility with
+  // serialized WSL server state stored in previous sessions. Renaming this
+  // property would break deserialization of existing persisted data.
   opencodeChecks: {},
   pendingRestart: false,
   job: null,
@@ -19,7 +22,7 @@ const state = (kind: "starting" | "ready" | "failed" | "stopped"): WslServersSta
 })
 
 function runtime(kind: "starting" | "ready" | "failed" | "stopped") {
-  if (kind === "ready") return { kind, url: "http://127.0.0.1:4096", username: "opencode", password: "secret" }
+  if (kind === "ready") return { kind, url: "http://127.0.0.1:4096", username: "am", password: "secret" }
   if (kind === "failed") return { kind, message: "boom" }
   return { kind }
 }

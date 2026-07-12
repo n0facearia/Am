@@ -1,9 +1,16 @@
 import { spawn } from "node:child_process"
-import { existsSync } from "node:fs"
-import { join } from "node:path"
+import { existsSync, readFileSync } from "node:fs"
+import { join, dirname } from "node:path"
+import { fileURLToPath } from "node:url"
 import * as pty from "@lydell/node-pty"
 import type { WslDistroProbe, WslInstalledDistro, WslOnlineDistro, WslRuntimeCheck } from "../../preload/types"
 import { wslTerminalArgs } from "./policy"
+
+// Resolve brand configuration from the workspace root.
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
+const brandConfigPath = join(__dirname, "../../../../../brand.config.json")
+const brandConfig: { installerUrl?: string } = JSON.parse(readFileSync(brandConfigPath, "utf8"))
 
 export type WslCommandLine = {
   stream: "stdout" | "stderr"
@@ -263,7 +270,7 @@ export async function installWslOpencode(version: string, distro: string, opts?:
   return runInteractiveCommand(
     resolveSystem32Command("wsl.exe"),
     wslArgs(
-      ["bash", "-lc", `curl -fsSL https://opencode.ai/install | bash -s -- --version ${shellEscape(version)}`],
+      ["bash", "-lc", `curl -fsSL ${brandConfig.installerUrl} | bash -s -- --version ${shellEscape(version)}`],
       distro,
     ),
     withTimeout(opts, DEFAULT_WSL_INSTALL_TIMEOUT_MS),

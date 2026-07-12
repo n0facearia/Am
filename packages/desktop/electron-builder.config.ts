@@ -11,9 +11,12 @@ const rootDir = path.resolve(packageDir, "../..")
 const signScript = path.join(rootDir, "script", "sign-windows.ps1")
 // The Electron 42 packaging update briefly installed Linux launchers/icons under
 // "opencode-desktop". Keep that hidden desktop entry around so existing GNOME/KDE
-// pins still resolve after the canonical app id changes back to ai.opencode.desktop.
-const legacyDesktopEntry = path.join(packageDir, "resources", "linux", "opencode-desktop.desktop")
-const legacyDesktopEntryFpm = `${legacyDesktopEntry}=/usr/share/applications/opencode-desktop.desktop`
+// pins still resolve after the canonical app id changes to am.desktop.
+const legacyOpenCodeDesktopEntry = path.join(packageDir, "resources", "linux", "opencode-desktop.desktop")
+const legacyOpenCodeDesktopEntryFpm = `${legacyOpenCodeDesktopEntry}=/usr/share/applications/opencode-desktop.desktop`
+// Legacy desktop entry path for AM branding.
+const legacyDesktopEntry = path.join(packageDir, "resources", "linux", "am-desktop.desktop")
+const legacyDesktopEntryFpm = `${legacyDesktopEntry}=/usr/share/applications/am-desktop.desktop`
 
 async function signWindows(configuration: { path: string }) {
   if (process.platform !== "win32") return
@@ -33,13 +36,13 @@ const channel = (() => {
 })()
 
 const APP_IDS = {
-  dev: "ai.opencode.desktop.dev",
-  beta: "ai.opencode.desktop.beta",
-  prod: "ai.opencode.desktop",
+  dev: "am.desktop.dev",
+  beta: "am.desktop.beta",
+  prod: "am.desktop",
 } as const
 
 const getBase = (appId: string): Configuration => ({
-  artifactName: "opencode-desktop-${os}-${arch}.${ext}",
+  artifactName: "am-desktop-${os}-${arch}.${ext}",
   directories: {
     output: "dist",
     buildResources: "resources",
@@ -74,8 +77,8 @@ const getBase = (appId: string): Configuration => ({
     sign: true,
   },
   protocols: {
-    name: "OpenCode",
-    schemes: ["opencode"],
+    name: "AM",
+    schemes: ["am"],
   },
   win: {
     icon: `resources/icons/icon.ico`,
@@ -115,29 +118,29 @@ function getConfig() {
       return {
         ...base,
         appId,
-        productName: "OpenCode Dev",
-        rpm: { packageName: "opencode-dev" },
+        productName: "AM Dev",
+        rpm: { packageName: "am-dev" },
       }
     }
     case "beta": {
       return {
         ...base,
         appId,
-        productName: "OpenCode Beta",
-        protocols: { name: "OpenCode Beta", schemes: ["opencode"] },
-        publish: { provider: "github", owner: "anomalyco", repo: "opencode-beta", channel: "latest" },
-        rpm: { packageName: "opencode-beta" },
+        productName: "AM Beta",
+        protocols: { name: "AM Beta", schemes: ["am"] },
+        publish: { provider: "github", owner: "anomalyco", repo: "am-beta", channel: "latest" },
+        rpm: { packageName: "am-beta" },
       }
     }
     case "prod": {
       return {
         ...base,
         appId,
-        productName: "OpenCode",
-        protocols: { name: "OpenCode", schemes: ["opencode"] },
-        publish: { provider: "github", owner: "anomalyco", repo: "opencode", channel: "latest" },
-        deb: { fpm: [legacyDesktopEntryFpm] },
-        rpm: { packageName: "opencode", fpm: [legacyDesktopEntryFpm] },
+        productName: "AM",
+        protocols: { name: "AM", schemes: ["am"] },
+        publish: { provider: "github", owner: "anomalyco", repo: "am", channel: "latest" },
+        deb: { fpm: [legacyDesktopEntryFpm, legacyOpenCodeDesktopEntryFpm] },
+        rpm: { packageName: "am", fpm: [legacyDesktopEntryFpm, legacyOpenCodeDesktopEntryFpm] },
       }
     }
   }

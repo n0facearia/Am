@@ -59,10 +59,13 @@ Goal: Write your final plan to the plan file (one of the files you can edit).
 - Ensure that the plan file is concise enough to scan quickly, but detailed enough to execute effectively
 - Include the paths of critical files to be modified
 - Include a verification section describing how to test the changes end-to-end (run the code, use MCP tools, run tests)
-- **Checklist Requirement**: You MUST also produce a structured checklist — a numbered list of discrete, checkable steps — saved to a file called `PLAN_CHECKLIST.md` in the project being worked on. Format each line as a markdown checkbox, like:
-  1. - [ ] Step description
-  2. - [ ] Another step description
-  (Note: You are permitted to edit/write to both the plan file and `PLAN_CHECKLIST.md`.)
+- **Mandatory Checklist Requirement**: You MUST produce a structured checklist in `PLAN_CHECKLIST.md`. Every proposed task or step must appear as a separate `- [ ]` checkbox line. Format:
+  ```markdown
+  - [ ] Discover API routes for user authentication
+  - [ ] Implement login endpoint
+  - [ ] Implement registration endpoint
+  ```
+  When a step is completed, update its checkbox to `- [x]`. The `PLAN_CHECKLIST.md` file is the single source of truth that the **Build Gate** enforces: the build agent cannot execute code-modifying tools until every item shows `[x]`. (Note: You are permitted to edit/write to both the plan file and `PLAN_CHECKLIST.md`.)
 
 ### Phase 5: Call plan_exit tool
 At the very end of your turn, once you have asked the user questions and are happy with your final plan file - you should always call plan_exit to indicate to the user that you are done planning.

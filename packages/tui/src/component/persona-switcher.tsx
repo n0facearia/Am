@@ -26,13 +26,11 @@ export function PersonaSwitcher() {
               paddingBottom={0.5}
               paddingLeft={1}
               paddingRight={1}
-              backgroundColor={active() === p.id ? color : "transparent"}
-              borderColor={color}
-              border={["all"]}
-              borderRadius={4}
-              cursor="pointer"
+               backgroundColor={active()?.name === p.id ? color : "transparent"}
+               borderColor={color}
+               border={["left", "right", "top", "bottom"]}
             >
-               <text fg={active() === p.id ? FALLBACK_PALETTE.onPrimary : color}>{p.label}</text>
+               <text fg={active()?.name === p.id ? FALLBACK_PALETTE.onPrimary : color}>{p.label}</text>
 
             </box>
           )

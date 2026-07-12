@@ -1,1 +1,1 @@
-Fetch a component, icon, font, or photo asset from pre-approved domains. On success, the asset is saved in .am/asset-cache/ as a cache. On failure, the tool attempts to retrieve the asset from .am/asset-cache/.
+Fetch a component, icon, font, or photo asset from pre-approved domains. Assets are cached in .am/asset-cache/{category}/ by type (component, icon, font, illustration, reference). On network failure, the tool falls back to exact cache match, then nearest category match in the cache, then lists all available cached assets.

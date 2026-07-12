@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=AM
+Exec=/opt/AM/am.desktop %U
+Terminal=false
+Type=Application
+Icon=am.desktop
+StartupWMClass=am.desktop
+NoDisplay=true
+Comment=AI coding agent
+Categories=Development;

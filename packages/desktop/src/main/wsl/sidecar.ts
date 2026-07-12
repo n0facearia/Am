@@ -18,11 +18,11 @@ export async function spawnWslSidecar(
   opts: { onLine?: (line: WslCommandLine) => void; healthTimeoutMs?: number } = {},
 ): Promise<WslSidecar> {
   const opencode = await resolveWslOpencode(distro)
-  if (!opencode) throw new Error(`OpenCode is not installed in ${distro}`)
+  if (!opencode) throw new Error(`AM CLI is not installed in ${distro}`)
 
   const port = await allocatePort()
   const password = randomUUID()
-  const username = "opencode"
+  const username = "am"
   const script = [
     "set -euo pipefail",
     'cd "$HOME" || cd /',

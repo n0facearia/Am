@@ -1,6 +1,6 @@
 import { createMemo } from "solid-js"
 import { useTheme } from "../context/theme"
-import { RGBA } from "@opentui/core"
+import { RGBA, TextAttributes } from "@opentui/core"
 
 export type MascotState = "idle" | "thinking" | "success" | "error"
 
@@ -30,8 +30,8 @@ export function Mascot(props: { state: MascotState }) {
   const current = states[props.state]
 
   return (
-    <box flexDirection="column" alignItems="center" transition={150}>
-      <text fg={current.color} style={{ bold: true }}>
+    <box flexDirection="column" alignItems="center">
+      <text fg={current.color} attributes={TextAttributes.BOLD}>
         {current.art}
       </text>
     </box>

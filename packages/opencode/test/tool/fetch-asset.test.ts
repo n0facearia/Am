@@ -7,7 +7,6 @@ import { Agent } from "../../src/agent/agent"
 import { Truncate } from "@/tool/truncate"
 import { FetchAssetTool } from "../../src/tool/fetch-asset"
 import { SessionID, MessageID } from "../../src/session/schema"
-import { Tool } from "@/tool/tool"
 import { testEffect } from "../lib/effect"
 
 const it = testEffect(
@@ -27,11 +26,13 @@ const ctx = {
   ask: () => Effect.void,
 }
 
-const exec = Effect.fn("FetchAssetToolTest.exec")(function* (args: Tool.InferParameters<typeof FetchAssetTool>) {
-  const info = yield* FetchAssetTool
-  const tool = yield* info.init()
-  return yield* tool.execute(args, ctx)
-})
+function exec(args: Record<string, unknown>) {
+  return Effect.gen(function* () {
+    const info = yield* FetchAssetTool
+    const tool = yield* info.init()
+    return yield* tool.execute(args as any, ctx as any)
+  })
+}
 
 describe("tool.fetch-asset", () => {
   it.instance("fetches from approved domain", () =>
