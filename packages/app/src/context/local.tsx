@@ -53,7 +53,7 @@ const clone = (value: State | undefined) => {
   } satisfies State
 }
 
-export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
+export const { use: useLocal, useOptional: useLocalOptional, provider: LocalProvider } = createSimpleContext({
   name: "Local",
   init: () => {
     const params = useParams()

@@ -1,9 +1,9 @@
-import { createMemo, For } from "solid-js"
-import { useLocal } from "@/context/local"
+import { createMemo, For, Show } from "solid-js"
+import { useLocalOptional } from "@/context/local"
 
 export function PersonaSwitcher() {
-  const local = useLocal()
-  const active = createMemo(() => local.agent.current()?.name)
+  const local = useLocalOptional()
+  const active = createMemo(() => local?.agent.current()?.name)
 
   const personas = [
     { id: "plan", label: "Plan" },
@@ -12,7 +12,8 @@ export function PersonaSwitcher() {
   ]
 
   return (
-    <div
+    <Show when={local}>
+      <div
       class="flex flex-row items-center justify-center p-1 gap-1 rounded-md bg-v2-background-bg-base/50 mx-auto pointer-events-auto"
     >
       <For each={personas}>
@@ -20,7 +21,7 @@ export function PersonaSwitcher() {
           const isActive = createMemo(() => active() === p.id)
           return (
             <button
-              onClick={() => local.agent.set(p.id)}
+              onClick={() => local?.agent.set(p.id)}
               class={`px-4 py-1 rounded-[4px] text-xs font-semibold transition-all ease-in-out ${
                 isActive()
                   ? "shadow-sm"
@@ -41,6 +42,7 @@ export function PersonaSwitcher() {
           )
         }}
       </For>
-    </div>
+      </div>
+    </Show>
   )
 }

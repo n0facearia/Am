@@ -5,6 +5,8 @@ import { useLocation, useNavigate, useParams } from "@solidjs/router"
 import { type Accessor, createEffect, createMemo, createResource, onCleanup, type ParentProps, Show } from "solid-js"
 import { useLanguage } from "@/context/language"
 import { LocalProvider } from "@/context/local"
+import { useSettings } from "@/context/settings"
+import { PersonaSwitcher } from "@/components/persona-switcher"
 import { SDKProvider } from "@/context/sdk"
 import { useSync } from "@/context/sync"
 import { decode64 } from "@/utils/base64"
@@ -66,7 +68,14 @@ export function DirectoryDataProvider(
           onNavigateToSession={(sessionID: string) => navigate(href(sessionID))}
           onSessionHref={href}
         >
-          <LocalProvider>{props.children}</LocalProvider>
+          <LocalProvider>
+            <Show when={useSettings().general.newLayoutDesigns()}>
+              <div class="absolute top-[env(safe-area-inset-top,10px)] left-20 z-[60] pointer-events-none">
+                <PersonaSwitcher />
+              </div>
+            </Show>
+            {props.children}
+          </LocalProvider>
         </DataProvider>
       )}
     </Show>

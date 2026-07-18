@@ -109,7 +109,7 @@ const getBase = (appId: string): Configuration => ({
         StartupWMClass: appId,
       },
     },
-    target: ["AppImage", "deb", "rpm"],
+    target: ["AppImage", "deb"],
     maintainer: "AM <am@am.dev>",
   },
 })
