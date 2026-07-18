@@ -336,7 +336,9 @@ function NewAppLayout(props: ParentProps<{ serverScoped?: JSX.Element }>) {
 function DraftServerScopedProviders(props: ParentProps<{ directory?: () => string | undefined }>) {
   return (
     <PermissionProvider directory={props.directory}>
-      <ModelsProvider directory={props.directory}>{props.children}</ModelsProvider>
+      <LayoutProvider>
+        <ModelsProvider directory={props.directory}>{props.children}</ModelsProvider>
+      </LayoutProvider>
     </PermissionProvider>
   )
 }
@@ -406,6 +408,7 @@ function ConnectionGate(props: ParentProps<{ disableHealthCheck?: boolean; start
             const res = yield* Effect.promise(() => checkServerHealth(http))
             if (res.healthy) return true
             if (checkMode() === "background" || type === "http") return false
+            yield* Effect.sleep(200)
           }
         }).pipe(
           Effect.timeoutOrElse({ duration: "10 seconds", orElse: () => Effect.succeed(false) }),
@@ -427,6 +430,18 @@ function ConnectionGate(props: ParentProps<{ disableHealthCheck?: boolean; start
     () => startupHealthCheck.latest === true && ["unresolved", "pending"].includes(startup.state),
   )
   const loading = createMemo(() => checking() || startupChecking())
+
+  createEffect(() => {
+    console.log("[gate] ConnectionGate render check:", {
+      checking: checking(),
+      startupHealthCheckState: startupHealthCheck.state,
+      startupHealthCheckLatest: startupHealthCheck.latest,
+      startupChecking: startupChecking(),
+      startupState: startup.state,
+      loading: loading(),
+      hasStartupProp: !!props.startup,
+    })
+  })
 
   return (
     <>

@@ -58,6 +58,10 @@ const getBase = (appId: string): Configuration => ({
   files: ["out/**/*", "resources/**/*"],
   extraResources: [
     {
+      from: path.join(rootDir, "brand.config.json"),
+      to: "brand.config.json",
+    },
+    {
       from: "native/",
       to: "native/",
       filter: ["index.js", "index.d.ts", "build/Release/mac_window.node", "swift-build/**"],
@@ -106,19 +110,32 @@ const getBase = (appId: string): Configuration => ({
       },
     },
     target: ["AppImage", "deb", "rpm"],
+    maintainer: "AM <am@am.dev>",
   },
 })
+
+import fs from "node:fs"
+
+function getBrandConfig() {
+  try {
+    const brandPath = path.join(rootDir, "brand.config.json")
+    return JSON.parse(fs.readFileSync(brandPath, "utf-8"))
+  } catch (e) {
+    return { productName: "AM" }
+  }
+}
 
 function getConfig() {
   const appId = APP_IDS[channel]
   const base = getBase(appId)
+  const brand = getBrandConfig()
 
   switch (channel) {
     case "dev": {
       return {
         ...base,
         appId,
-        productName: "AM Dev",
+        productName: `${brand.productName} Dev`,
         rpm: { packageName: "am-dev" },
       }
     }
@@ -126,8 +143,8 @@ function getConfig() {
       return {
         ...base,
         appId,
-        productName: "AM Beta",
-        protocols: { name: "AM Beta", schemes: ["am"] },
+        productName: `${brand.productName} Beta`,
+        protocols: { name: `${brand.productName} Beta`, schemes: ["am"] },
         publish: { provider: "github", owner: "anomalyco", repo: "am-beta", channel: "latest" },
         rpm: { packageName: "am-beta" },
       }
@@ -136,8 +153,8 @@ function getConfig() {
       return {
         ...base,
         appId,
-        productName: "AM",
-        protocols: { name: "AM", schemes: ["am"] },
+        productName: brand.productName,
+        protocols: { name: brand.productName, schemes: ["am"] },
         publish: { provider: "github", owner: "anomalyco", repo: "am", channel: "latest" },
         deb: { fpm: [legacyDesktopEntryFpm, legacyOpenCodeDesktopEntryFpm] },
         rpm: { packageName: "am", fpm: [legacyDesktopEntryFpm, legacyOpenCodeDesktopEntryFpm] },

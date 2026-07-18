@@ -33,6 +33,14 @@ const SESSION_CONTENT_EVENTS = new Set([
   "question.rejected",
 ])
 
+type PendingModelSwitch = {
+  sessionID: string
+  model: { id: string; providerID: string; variant?: string }
+  timestamp: number
+}
+
+const pendingModelSwitches = new Map<string, PendingModelSwitch>()
+
 export function applyGlobalEvent(input: {
   event: { type: string; properties?: unknown }
   project: Project[]
@@ -89,6 +97,7 @@ export function cleanupDroppedSessionCaches(
     ...Object.keys(store.todo),
     ...Object.keys(store.permission),
     ...Object.keys(store.question),
+    ...Object.keys(store.budget_notice),
     ...Object.keys(store.session_status),
     ...Object.values(store.part)
       .map((parts) => parts?.find((part) => !!part?.sessionID)?.sessionID)
@@ -399,6 +408,38 @@ export function applyDirectoryEvent(input: {
           draft.splice(result.index, 1)
         }),
       )
+      break
+    }
+    case "session.next.model.switched": {
+      const props = event.properties as {
+        sessionID: string
+        messageID: string
+        model: { id: string; providerID: string; variant?: string }
+        timestamp: number
+      }
+      pendingModelSwitches.set(props.sessionID, {
+        sessionID: props.sessionID,
+        model: props.model,
+        timestamp: props.timestamp,
+      })
+      break
+    }
+    case "session.next.synthetic": {
+      const props = event.properties as {
+        sessionID: string
+        messageID: string
+        text: string
+        timestamp: number
+      }
+      const pending = pendingModelSwitches.get(props.sessionID)
+      if (pending) {
+        pendingModelSwitches.delete(props.sessionID)
+        input.setStore("budget_notice", props.sessionID, {
+          model: pending.model,
+          text: props.text,
+          timestamp: pending.timestamp,
+        })
+      }
       break
     }
     case "lsp.updated": {

@@ -23,8 +23,7 @@ import { ProviderV2 } from "@opencode-ai/core/provider"
 import { ModelV2 } from "@opencode-ai/core/model"
 import { isRecord } from "@/util/record"
 import { RuntimeFlags } from "@/effect/runtime-flags"
-import { BuildGate } from "@/tool/build-gate"
-import { InstanceState } from "@/effect/instance-state"
+
 
 const MCP_RESOURCE_TOOLS = {
   list: "list_mcp_resources",
@@ -91,11 +90,6 @@ export const resolve = Effect.fn("SessionTools.resolve")(function* (input: {
         .pipe(Effect.orDie),
   })
 
-  // Tools that modify code — gated in build mode when PLAN_CHECKLIST.md has
-  // unchecked items. The build agent must first satisfy the checklist before
-  // these tools can execute (or the user may override the gate).
-  const CODE_TOOLS = new Set(["edit", "write", "bash", "apply_patch"])
-
   for (const item of yield* registry.tools({
     modelID: ModelV2.ID.make(input.model.api.id),
     providerID: input.model.providerID,
@@ -111,34 +105,6 @@ export const resolve = Effect.fn("SessionTools.resolve")(function* (input: {
           Effect.gen(function* () {
             const ctx = context(args, options)
 
-            // ── Build Gate ────────────────────────────────────────────────
-            // Before executing a code-modifying tool in build mode, verify
-            // that PLAN_CHECKLIST.md is fully checked.  If not, return a
-            // blocking message unless the user manually overrides.
-            if (input.agent.name === "build" && CODE_TOOLS.has(item.id)) {
-              const instance = yield* InstanceState.context
-              const gate = yield* BuildGate.enforce(
-                instance.worktree,
-                input.session.id,
-                ctx.callID ? { messageID: ctx.messageID, callID: ctx.callID } : undefined,
-              )
-              if (gate.status === "blocked") {
-                return {
-                  title: "Build Gate Blocked",
-                  output: [
-                    "⚠️  Build Gate is active — PLAN_CHECKLIST.md has unchecked items.",
-                    "",
-                    "The following task(s) must be completed before build-mode code tools",
-                    "can execute. Either complete them in Plan mode or ask your user to",
-                    'override the gate with the "Override" option.',
-                    "",
-                    ...gate.uncheckedItems.map((item) => `  • ${item}`),
-                  ].join("\n"),
-                  metadata: {},
-                }
-              }
-            }
-            // ── End Build Gate ────────────────────────────────────────────
 
             yield* plugin.trigger(
               "tool.execute.before",

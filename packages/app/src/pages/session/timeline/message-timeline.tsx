@@ -75,6 +75,7 @@ import { scheduleConnectedMeasure } from "./measure"
 import { createTimelineProjection } from "./projection"
 import { MessageComment, SummaryDiff, TimelineRow, TimelineRowMap } from "./rows"
 import { filterVirtualIndexes } from "./virtual-items"
+import { BudgetNotice } from "@/components/budget-notice"
 
 const emptyMessages: MessageType[] = []
 const emptyParts: PartType[] = []
@@ -280,6 +281,11 @@ export function MessageTimeline(props: {
     const id = sessionID()
     if (!id) return idle
     return sync().data.session_status[id] ?? idle
+  })
+  const budgetNotice = createMemo(() => {
+    const id = sessionID()
+    if (!id) return undefined
+    return sync().data.budget_notice[id]
   })
   const sessionMessages = createMemo(() => (sessionID() ? (sync().data.message[sessionID()!] ?? []) : []))
   const info = createMemo(() => {
@@ -1815,6 +1821,13 @@ export function MessageTimeline(props: {
               </Show>
             </div>
           </div>
+        </Show>
+        <Show when={budgetNotice()}>
+          {(notice) => (
+            <div class="px-4 md:px-5 pb-2">
+              <BudgetNotice notice={notice()} />
+            </div>
+          )}
         </Show>
         <div
           data-timeline-virtual-content

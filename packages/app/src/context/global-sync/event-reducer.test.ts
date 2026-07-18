@@ -75,6 +75,7 @@ const baseState = (input: Partial<State> = {}) =>
     todo: {},
     permission: {},
     question: {},
+    budget_notice: {},
     mcp: {},
     lsp: [],
     vcs: undefined,

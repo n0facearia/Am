@@ -8,10 +8,8 @@ import { RuntimeFlags } from "@/effect/runtime-flags"
 import { PartID } from "./schema"
 import { MessageV2 } from "./message-v2"
 import { Session } from "./session"
-import { BuildGate } from "@/tool/build-gate"
 import PROMPT_PLAN from "./prompt/plan.txt"
 import BUILD_SWITCH from "./prompt/build-switch.txt"
-import BUILD_GATE_WARNING from "./prompt/build-gate-warning.txt"
 import PLAN_MODE from "./prompt/plan-mode.txt"
 
 export const apply = Effect.fn("SessionReminders.apply")(function* (input: {
@@ -69,25 +67,6 @@ export const apply = Effect.fn("SessionReminders.apply")(function* (input: {
     return input.messages
   }
 
-  // When the build agent is active, check whether the plan checklist has
-  // unchecked items and inject a gate warning if the user has not already
-  // overridden the gate in this session turn.
-  if (input.agent.name === "build") {
-    const ctx = yield* InstanceState.context
-    const { unchecked } = yield* BuildGate.scanChecklist(ctx.worktree)
-    if (unchecked.length > 0) {
-      const warningPart = yield* sessions.updatePart({
-        id: PartID.ascending(),
-        messageID: userMessage.info.id,
-        sessionID: userMessage.info.sessionID,
-        type: "text",
-        text: BUILD_GATE_WARNING,
-        synthetic: true,
-      })
-      userMessage.parts.push(warningPart)
-    }
-    return input.messages
-  }
 
   if (input.agent.name !== "plan" || assistantMessage?.info.agent === "plan") return input.messages
 

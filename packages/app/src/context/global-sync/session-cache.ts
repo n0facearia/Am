@@ -7,6 +7,7 @@ import type {
   SnapshotFileDiff,
   Todo,
 } from "@opencode-ai/sdk/v2/client"
+import type { BudgetNotice } from "./types"
 
 export const SESSION_CACHE_LIMIT = 40
 
@@ -18,6 +19,7 @@ type SessionCache = {
   part: Record<string, Part[] | undefined>
   permission: Record<string, PermissionRequest[] | undefined>
   question: Record<string, QuestionRequest[] | undefined>
+  budget_notice: Record<string, BudgetNotice | undefined>
   part_text_accum_delta: Record<string, string | undefined>
 }
 
@@ -41,6 +43,7 @@ export function dropSessionCaches(store: SessionCache, sessionIDs: Iterable<stri
     delete store.session_status[sessionID]
     delete store.permission[sessionID]
     delete store.question[sessionID]
+    delete store.budget_notice[sessionID]
   }
 }
 

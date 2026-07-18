@@ -3,14 +3,24 @@ import { existsSync, readFileSync } from "node:fs"
 import { join, dirname } from "node:path"
 import { fileURLToPath } from "node:url"
 import * as pty from "@lydell/node-pty"
+import { app } from "electron"
 import type { WslDistroProbe, WslInstalledDistro, WslOnlineDistro, WslRuntimeCheck } from "../../preload/types"
 import { wslTerminalArgs } from "./policy"
 
-// Resolve brand configuration from the workspace root.
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
-const brandConfigPath = join(__dirname, "../../../../../brand.config.json")
-const brandConfig: { installerUrl?: string } = JSON.parse(readFileSync(brandConfigPath, "utf8"))
+// Resolve brand configuration. In the packaged app, brand.config.json is an
+// extraResource sitting alongside the app binary; in dev, it lives at the
+// workspace root relative to this file.
+function readBrandConfig(): { installerUrl?: string } {
+  const brandConfigPath = app.isPackaged
+    ? join(process.resourcesPath, "brand.config.json")
+    : join(dirname(fileURLToPath(import.meta.url)), "../../../../../brand.config.json")
+  try {
+    return JSON.parse(readFileSync(brandConfigPath, "utf8"))
+  } catch {
+    return {}
+  }
+}
+const brandConfig = readBrandConfig()
 
 export type WslCommandLine = {
   stream: "stdout" | "stderr"

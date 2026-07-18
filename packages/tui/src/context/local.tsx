@@ -13,6 +13,11 @@ import { useTheme } from "./theme"
 import { useToast } from "../ui/toast"
 import { useRoute } from "./route"
 import { usePermission } from "./permission"
+import { appendFileSync } from "node:fs"
+
+function tuiLog(msg: string) {
+  try { appendFileSync("/tmp/tui-debug.log", `[${new Date().toISOString()}] ${msg}\n`) } catch {}
+}
 
 export type LocalTheme = {
   secondary: RGBA

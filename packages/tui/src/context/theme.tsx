@@ -102,6 +102,8 @@ const [store, setStore] = createStore<State>({
 
 subscribeThemes((themes) => setStore("themes", themes))
 
+let globalThemeInitialized = false
+
 export const { use: useTheme, provider: ThemeProvider } = createSimpleContext({
   name: "Theme",
   init: (props: { mode: "dark" | "light"; source?: ThemeSource; activeAgent?: () => string }) => {
@@ -114,20 +116,25 @@ export const { use: useTheme, provider: ThemeProvider } = createSimpleContext({
       return
     }
 
-    setStore(
-      produce((draft) => {
-        const lock = pick(kv.get("theme_mode_lock"))
-        const mode = lock ?? pick(renderer.themeMode) ?? props.mode
-        if (!lock && pick(kv.get("theme_mode")) !== undefined) kv.set("theme_mode", undefined)
-        draft.mode = mode
-        draft.lock = lock
-        const active = config.theme ?? kv.get("theme", "opencode")
-        draft.active = typeof active === "string" ? active : "opencode"
-        draft.ready = false
-      }),
-    )
+    const isRoot = !globalThemeInitialized
+    if (isRoot) {
+      globalThemeInitialized = true
+      setStore(
+        produce((draft) => {
+          const lock = pick(kv.get("theme_mode_lock"))
+          const mode = lock ?? pick(renderer.themeMode) ?? props.mode
+          if (!lock && pick(kv.get("theme_mode")) !== undefined) kv.set("theme_mode", undefined)
+          draft.mode = mode
+          draft.lock = lock
+          const active = config.theme ?? kv.get("theme", "opencode")
+          draft.active = typeof active === "string" ? active : "opencode"
+          draft.ready = false
+        }),
+      )
+    }
 
     createEffect(() => {
+      if (!isRoot) return
       const theme = config.theme
       if (theme) setStore("active", theme)
     })
@@ -143,10 +150,13 @@ export const { use: useTheme, provider: ThemeProvider } = createSimpleContext({
             }, {}),
           )
         })
-        .catch(() => setStore("active", "opencode"))
+        .catch(() => {
+          if (isRoot) setStore("active", "opencode")
+        })
     }
 
     onMount(() => {
+      if (!isRoot) return
       void Promise.allSettled([resolveSystemTheme(store.mode), syncCustomThemes()]).finally(() => {
         setStore("ready", true)
       })
@@ -226,14 +236,12 @@ export const { use: useTheme, provider: ThemeProvider } = createSimpleContext({
       if (store.lock) return
       apply(mode)
     }
-    renderer.on(CliRenderEvents.THEME_MODE, handle)
 
     const handleThemeNotification = (sequence: string) => {
       if (sequence !== "\x1b[?997;1n" && sequence !== "\x1b[?997;2n") return false
       queueMicrotask(() => refreshSystemTheme())
       return false
     }
-    renderer.prependInputHandler(handleThemeNotification)
 
     let themeRefreshTimeouts: ReturnType<typeof setTimeout>[] = []
     const refresh = () => {
@@ -246,12 +254,20 @@ export const { use: useTheme, provider: ThemeProvider } = createSimpleContext({
       )
     }
     let unsubscribeRefresh: (() => void) | undefined
-    unsubscribeRefresh = themes.subscribeRefresh?.(refresh)
+
+    if (isRoot) {
+      renderer.on(CliRenderEvents.THEME_MODE, handle)
+      renderer.prependInputHandler(handleThemeNotification)
+      unsubscribeRefresh = themes.subscribeRefresh?.(refresh)
+    }
 
     onCleanup(() => {
-      renderer.off(CliRenderEvents.THEME_MODE, handle)
-      renderer.removeInputHandler(handleThemeNotification)
-      unsubscribeRefresh?.()
+      if (isRoot) {
+        globalThemeInitialized = false
+        renderer.off(CliRenderEvents.THEME_MODE, handle)
+        renderer.removeInputHandler(handleThemeNotification)
+        unsubscribeRefresh?.()
+      }
       for (const timeout of themeRefreshTimeouts) clearTimeout(timeout)
       themeRefreshTimeouts.length = 0
     })

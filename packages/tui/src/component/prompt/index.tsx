@@ -52,6 +52,11 @@ import { DialogSkill } from "../dialog-skill"
 import { DialogWorkspaceUnavailable } from "../dialog-workspace-unavailable"
 import { useArgs } from "../../context/args"
 import { OPENCODE_BASE_MODE, useBindings, useCommandShortcut, useLeaderActive, useOpencodeKeymap } from "../../keymap"
+import { appendFileSync } from "node:fs"
+
+function tuiLog(msg: string) {
+  try { appendFileSync("/tmp/tui-debug.log", `[${new Date().toISOString()}] ${msg}\n`) } catch {}
+}
 import { useTuiConfig } from "../../config"
 import { usePromptWorkspace } from "./workspace"
 import { usePromptMove } from "./move"
@@ -1131,7 +1136,9 @@ export function Prompt(props: PromptProps) {
     // temporary hack to make sure the message is sent
     if (!props.sessionID) {
       if (editorParts.length > 0) editor.preserveSelectionFromNewSession()
+      tuiLog(`[prompt] navigate to session ${sessionID} in 50ms`)
       setTimeout(() => {
+        tuiLog(`[prompt] navigating NOW to session ${sessionID}`)
         route.navigate({
           type: "session",
           sessionID,

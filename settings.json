@@ -1,12 +1,19 @@
 {
+  "budgetGuardian": {
+    "fallbackModels": [
+      "opencode/deepseek-v4-flash-free",
+      "opencode/deepseek-v4-pro"
+    ],
+    "contextThreshold": 0.8
+  },
   "agentModels": {
-    "plan": "google/gemini-1.5-flash",
-    "build": "google/gemini-1.5-pro",
-    "chat": "google/gemini-3.5-flash",
-    "frontend": "google/gemini-3.5-flash",
-    "backend": "google/gemini-3.5-flash",
-    "documentation": "google/gemini-3.5-flash",
-    "orchestrator": "google/gemini-3.5-flash"
+    "plan": "opencode/deepseek-v4-flash-free",
+    "build": "opencode/deepseek-v4-pro",
+    "chat": "opencode/deepseek-v4-flash-free",
+    "frontend": "opencode/deepseek-v4-flash-free",
+    "backend": "opencode/deepseek-v4-flash-free",
+    "documentation": "opencode/deepseek-v4-flash-free",
+    "orchestrator": "opencode/deepseek-v4-flash-free"
   },
   "customInstructions": {
     "plan": [],

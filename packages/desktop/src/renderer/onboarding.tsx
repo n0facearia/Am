@@ -23,12 +23,30 @@ export function DesktopFirstLaunchOnboarding(props: { initialUrl: string; onLoad
 
   async function runFirstLaunchOnboarding() {
     try {
-      await Promise.all(
-        [server.ready.promise, layout.ready.promise, tabs.ready.promise, tabs.recentReady.promise].map(
-          (p) => p ?? Promise.resolve(),
-        ),
-      )
-      if (!server.isLocal()) return
+      console.log("[desktop-onboarding] waiting for promises...");
+      console.log("[desktop-onboarding] server.ready.promise", !!server.ready.promise);
+      console.log("[desktop-onboarding] layout.ready.promise", !!layout.ready.promise);
+      console.log("[desktop-onboarding] tabs.ready.promise", !!tabs.ready.promise);
+      console.log("[desktop-onboarding] tabs.recentReady.promise", !!tabs.recentReady.promise);
+      
+      const p1 = server.ready.promise ?? Promise.resolve();
+      p1.then(() => console.log("[desktop-onboarding] server.ready.promise resolved"));
+      
+      const p2 = layout.ready.promise ?? Promise.resolve();
+      p2.then(() => console.log("[desktop-onboarding] layout.ready.promise resolved"));
+      
+      const p3 = tabs.ready.promise ?? Promise.resolve();
+      p3.then(() => console.log("[desktop-onboarding] tabs.ready.promise resolved"));
+      
+      const p4 = tabs.recentReady.promise ?? Promise.resolve();
+      p4.then(() => console.log("[desktop-onboarding] tabs.recentReady.promise resolved"));
+
+      await Promise.all([p1, p2, p3, p4])
+      console.log("[desktop-onboarding] all promises resolved!");
+      if (!server.isLocal()) {
+        console.log("[desktop-onboarding] not local server, skipping onboarding");
+        return
+      }
 
       const pending = await window.api.isFirstLaunchOnboardingPending()
       if (!pending) return

@@ -33,6 +33,9 @@ import { SessionSchema } from "../schema"
 import { SessionStore } from "../store"
 import { type RunError, Service } from "./index"
 import { SessionRunnerModel } from "./model"
+import { SessionMessage } from "../message"
+import { BudgetGuardian } from "../budget-guardian"
+import { Token } from "../../util/token"
 import { createLLMEventPublisher } from "./publish-llm-event"
 import { toLLMMessages } from "./to-llm-message"
 import { MAX_STEPS_PROMPT } from "./max-steps"
@@ -177,6 +180,8 @@ const layer = Layer.effect(
       step: number,
       recoverOverflow?: typeof compaction.compactAfterOverflow,
     ) {
+      const budgetGuardianOption = yield* Effect.serviceOption(BudgetGuardian.Service)
+      const budgetGuardian = Option.getOrUndefined(budgetGuardianOption)
       const session = yield* getSession(sessionID)
       if (session.location.directory !== location.directory || session.location.workspaceID !== location.workspaceID)
         return yield* Effect.interrupt
@@ -213,6 +218,48 @@ const layer = Layer.effect(
         tools: toolMaterialization?.definitions ?? [],
         toolChoice: isLastStep ? "none" : undefined,
       })
+      if (budgetGuardian) {
+        const contextLimit = model.route.defaults.limits?.context ?? 128_000
+        const estimatedTokens = Token.estimate(
+          JSON.stringify({ system: request.system, messages: request.messages, tools: request.tools }),
+        )
+        const checkResult = yield* budgetGuardian.check(
+          session.location.directory,
+          session.id,
+          contextLimit,
+          estimatedTokens,
+          (session.tokens?.input ?? 0) + (session.tokens?.output ?? 0),
+        )
+        if (checkResult.status === "failover") {
+          yield* events.publish(SessionEvent.ModelSwitched, {
+            sessionID: session.id,
+            messageID: SessionMessage.ID.create(),
+            timestamp: yield* DateTime.now,
+            model: checkResult.fallbackModel,
+          })
+          yield* events.publish(SessionEvent.Synthetic, {
+            sessionID: session.id,
+            messageID: SessionMessage.ID.create(),
+            timestamp: yield* DateTime.now,
+            text: checkResult.message,
+          })
+          model = yield* models.resolve({
+            ...session,
+            model: checkResult.fallbackModel,
+          })
+          request = LLM.request({
+            model,
+            providerOptions: { openai: { promptCacheKey } },
+            system: [agent.info?.system, system.baseline]
+              .filter((part): part is string => part !== undefined && part.length > 0)
+              .map(SystemPart.make),
+            messages: [...toLLMMessages(context, model), ...(isLastStep ? [Message.assistant(MAX_STEPS_PROMPT)] : [])],
+            tools: toolMaterialization?.definitions ?? [],
+            toolChoice: isLastStep ? "none" : undefined,
+          })
+        }
+      }
+
       if (yield* compaction.compactIfNeeded({ sessionID: session.id, entries, model, request }))
         return yield* Effect.die(continueAfterCompaction(currentStep))
 
@@ -290,6 +337,34 @@ const layer = Layer.effect(
             return yield* Effect.die(continueAfterOverflowCompaction(currentStep))
           if (overflowFailure) yield* publish(overflowFailure)
           const llmFailure = failure instanceof LLMError ? failure : undefined
+          if (budgetGuardian && llmFailure && llmFailure.reason._tag === "RateLimit") {
+            const modelRef = ModelV2.Ref.make({
+              id: ModelV2.ID.make(model.id),
+              providerID: ProviderV2.ID.make(model.provider),
+            })
+            const checkResult = yield* budgetGuardian.recordRateLimit(
+              session.location.directory,
+              session.id,
+              modelRef,
+            )
+            if (checkResult.status === "failover") {
+              yield* events.publish(SessionEvent.ModelSwitched, {
+                sessionID: session.id,
+                messageID: SessionMessage.ID.create(),
+                timestamp: yield* DateTime.now,
+                model: checkResult.fallbackModel,
+              })
+              yield* events.publish(SessionEvent.Synthetic, {
+                sessionID: session.id,
+                messageID: SessionMessage.ID.create(),
+                timestamp: yield* DateTime.now,
+                text: checkResult.message,
+              })
+              yield* FiberSet.clear(toolFibers)
+              yield* withPublication(publisher.failUnsettledTools("Rate limit exceeded"))
+              return yield* Effect.die(continueAfterCompaction(currentStep))
+            }
+          }
           if (llmFailure && !publisher.hasProviderError()) {
             yield* withPublication(publisher.failUnsettledTools("Provider did not return a tool result", true))
             yield* withPublication(publisher.failAssistant(llmFailure.reason.message))
@@ -336,6 +411,9 @@ const layer = Layer.effect(
                 files,
               }),
             )
+            if (budgetGuardian) {
+              yield* budgetGuardian.recordTokens(session.id, stepSettlement.tokens)
+            }
           }
           if (publisher.hasProviderError())
             yield* withPublication(publisher.failUnsettledTools("Tool execution interrupted"))
@@ -355,7 +433,13 @@ const layer = Layer.effect(
     ) => Effect.Effect<{ readonly needsContinuation: boolean; readonly step: number }, RunError>
 
     const runAfterOverflowCompaction: RunTurn = Effect.fnUntraced(function* (sessionID, promotion, step) {
-      return yield* runTurnAttempt(sessionID, promotion, step).pipe(
+      const budgetGuardianOption = yield* Effect.serviceOption(BudgetGuardian.Service)
+      const budgetGuardian = Option.getOrUndefined(budgetGuardianOption)
+      let turnEffect = runTurnAttempt(sessionID, promotion, step)
+      if (budgetGuardian) {
+        turnEffect = turnEffect.pipe(Effect.provideService(BudgetGuardian.Service, budgetGuardian))
+      }
+      return yield* turnEffect.pipe(
         Effect.catchDefect(
           Effect.fnUntraced(function* (defect) {
             if (!(defect instanceof TurnTransitionError)) return yield* Effect.die(defect)
@@ -369,7 +453,13 @@ const layer = Layer.effect(
     })
 
     const runTurn: RunTurn = Effect.fnUntraced(function* (sessionID, promotion, step) {
-      return yield* runTurnAttempt(sessionID, promotion, step, compaction.compactAfterOverflow).pipe(
+      const budgetGuardianOption = yield* Effect.serviceOption(BudgetGuardian.Service)
+      const budgetGuardian = Option.getOrUndefined(budgetGuardianOption)
+      let turnEffect = runTurnAttempt(sessionID, promotion, step, compaction.compactAfterOverflow)
+      if (budgetGuardian) {
+        turnEffect = turnEffect.pipe(Effect.provideService(BudgetGuardian.Service, budgetGuardian))
+      }
+      return yield* turnEffect.pipe(
         Effect.catchDefect(
           Effect.fnUntraced(function* (defect) {
             if (!(defect instanceof TurnTransitionError)) return yield* Effect.die(defect)
@@ -430,6 +520,6 @@ export const node = makeLocationNode({
     Config.node,
     Snapshot.node,
     Database.node,
-
+    BudgetGuardian.node,
   ],
 })

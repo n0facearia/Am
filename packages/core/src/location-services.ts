@@ -24,6 +24,7 @@ import { Pty } from "./pty"
 import { QuestionV2 } from "./question"
 import { Reference } from "./reference"
 import { ReferenceGuidance } from "./reference/guidance"
+import { BudgetGuardian } from "./session/budget-guardian"
 import * as SessionRunnerLLM from "./session/runner/llm"
 import { SessionRunnerModel } from "./session/runner/model"
 import { SessionTodo } from "./session/todo"
@@ -76,6 +77,7 @@ export const locationServices = LayerNode.group([
   SessionRunnerModel.node,
   Snapshot.node,
   SessionRunnerLLM.node,
+  BudgetGuardian.node,
 ])
 
 export type LocationServices = LayerNode.Output<typeof locationServices>

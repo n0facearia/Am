@@ -1,4 +1,5 @@
 import { Context, Effect, Layer, Schema } from "effect"
+import { readFileSync } from "fs"
 import { makeGlobalNode } from "../effect/app-node"
 import { FSUtil } from "../fs-util"
 import { ModelV2 } from "../model"
@@ -38,6 +39,7 @@ export interface Interface {
     sessionID: Session.ID,
     contextLimit: number,
     estimatedTokens: number,
+    accumulatedTokens?: number,
   ) => Effect.Effect<CheckResult>
   readonly recordTokens: (
     sessionID: Session.ID,
@@ -110,9 +112,12 @@ export const layer = Layer.effect(
       return s
     }
 
-    const check: Interface["check"] = (worktree, sessionID, contextLimit, estimatedTokens) =>
+    const check: Interface["check"] = (worktree, sessionID, contextLimit, estimatedTokens, accumulatedTokens = 0) =>
       Effect.gen(function* () {
         const s = getOrCreate(sessionID)
+        if (s.tokensInput === 0 && s.tokensOutput === 0 && accumulatedTokens > 0) {
+          s.tokensInput = accumulatedTokens
+        }
         const settings = yield* readSettings(worktree)
         const totalAccumulated = s.tokensInput + s.tokensOutput
         const projected = totalAccumulated + estimatedTokens

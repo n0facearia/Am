@@ -6,6 +6,7 @@ import type {
   McpResource,
   McpStatus,
   Message,
+  ModelRef,
   Part,
   Path,
   PermissionRequest,
@@ -30,6 +31,12 @@ export type ProjectMeta = {
   commands?: {
     start?: string
   }
+}
+
+export type BudgetNotice = {
+  model: ModelRef
+  text: string
+  timestamp: number
 }
 
 export type State = {
@@ -61,6 +68,9 @@ export type State = {
   }
   question: {
     [sessionID: string]: QuestionRequest[]
+  }
+  budget_notice: {
+    [sessionID: string]: BudgetNotice
   }
   mcp_ready: boolean
   mcp: {

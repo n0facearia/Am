@@ -32,6 +32,11 @@ import { batch, onMount } from "solid-js"
 import path from "path"
 import { useKV } from "./kv"
 import { usePermission } from "./permission"
+import { appendFileSync } from "node:fs"
+
+function tuiLog(msg: string) {
+  try { appendFileSync("/tmp/tui-debug.log", `[${new Date().toISOString()}] ${msg}\n`) } catch {}
+}
 
 const emptyConsoleState: ConsoleState = {
   consoleManagedProviders: [],
@@ -277,6 +282,7 @@ export const {
           break
         }
         case "session.updated": {
+          tuiLog(`[sync] SSE session.updated: id=${event.properties.info.id} title=${event.properties.info.title}`)
           const result = search(store.session, event.properties.info.id, (s) => s.id)
           if (result.found) {
             setStore("session", result.index, reconcile(event.properties.info))
@@ -500,6 +506,7 @@ export const {
               setStore("provider", reconcile(providers.providers))
               setStore("provider_default", reconcile(providers.default))
               setStore("provider_next", reconcile(providerList))
+              tuiLog(`[sync] bootstrap provider_next: connected=${JSON.stringify(providerList.connected)} all=${providerList.all.length} providers=${providers.providers.map((p: any) => p.id)}`)
               setStore("capabilities", "experimentalBackgroundSubagents", capabilities?.backgroundSubagents === true)
               setStore("console_state", reconcile(consoleState))
               setStore("agent", reconcile(agents))
@@ -586,9 +593,10 @@ export const {
           return last.time.completed ? "idle" : "working"
         },
         async sync(sessionID: string) {
-          if (fullSyncedSessions.has(sessionID)) return
+          if (fullSyncedSessions.has(sessionID)) { tuiLog(`[sync] session.sync ALREADY DONE for ${sessionID}`); return }
           const syncing = syncingSessions.get(sessionID)
-          if (syncing) return syncing
+          if (syncing) { tuiLog(`[sync] session.sync IN PROGRESS for ${sessionID}, reusing`); return syncing }
+          tuiLog(`[sync] session.sync START for ${sessionID}`)
           const tracker = { messages: new Set<string>(), parts: new Set<string>() }
           hydratingSessions.set(sessionID, tracker)
           const task = (async () => {
@@ -651,6 +659,7 @@ export const {
               }),
             )
             fullSyncedSessions.add(sessionID)
+            tuiLog(`[sync] session.sync completed for ${sessionID}, messages=${(messages.data ?? []).length}`)
           })().finally(() => {
             syncingSessions.delete(sessionID)
             hydratingSessions.delete(sessionID)

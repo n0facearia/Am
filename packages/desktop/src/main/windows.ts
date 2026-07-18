@@ -1,7 +1,7 @@
 import windowState from "electron-window-state"
 import { resolveThemeVariant } from "@opencode-ai/ui/theme/resolve"
 import type { DesktopTheme } from "@opencode-ai/ui/theme/types"
-import am2ThemeJson from "../../../ui/src/theme/themes/am-2.json"
+import am2ThemeJson from "../../../ui/src/theme/themes/opencode.json"
 import { randomUUID } from "node:crypto"
 import { rmSync } from "node:fs"
 import { app, BrowserWindow, dialog, net, nativeImage, nativeTheme, protocol } from "electron"
@@ -202,6 +202,10 @@ export function createMainWindow(id: string = randomUUID()) {
 
   allowRendererPermissions(win)
   wireWindowRecovery(win, id)
+
+  win.webContents.on('console-message', (event, level, message, line, sourceId) => {
+    console.log(`[Renderer ${level}] ${message}`);
+  });
 
   win.webContents.session.webRequest.onBeforeSendHeaders((details, callback) => {
     const { requestHeaders } = details

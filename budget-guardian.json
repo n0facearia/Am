@@ -1,7 +1,13 @@
 {
   "threshold": 0.8,
   "priority": [
-    { "model": "google/gemini-3.5-flash", "limit": 1000 },
-    { "model": "google/gemini-2.5-flash", "limit": 1000000 }
+    {
+      "model": "anthropic/claude-sonnet-4",
+      "limit": 200000
+    },
+    {
+      "model": "google/gemini-2.5-flash",
+      "limit": 1000000
+    }
   ]
 }

@@ -57,38 +57,68 @@ export const enforce = Effect.fn("BuildGate.enforce")(function* (
   sessionID: SessionID,
   toolRef: { readonly messageID: MessageID; readonly callID: string } | undefined,
 ) {
+  const fsys = yield* FSUtil.Service
+  const checklistPath = path.join(worktree, "PLAN_CHECKLIST.md")
+  const hasChecklist = yield* fsys.existsSafe(checklistPath)
   const { unchecked, checked } = yield* scanChecklist(worktree)
-  if (unchecked.length === 0) return { status: Passed } as GateResult
 
   const question = yield* Question.Service
-  const warningList = unchecked.map((item) => `  • ${item}`).join("\n")
+
+  let questionText: string
+  let headerText: string
+  let yesLabel: string
+  let yesDesc: string
+  let noLabel: string
+  let noDesc: string
+
+  if (unchecked.length > 0) {
+    questionText = `Warning: The following checklist items are still unchecked:\n` +
+      unchecked.map((item) => `• ${item}`).join("\n") +
+      `\n\nAre you sure you want to proceed to the build agent?`
+    headerText = "Unfinished Checklist"
+    yesLabel = "Yes, proceed anyway"
+    yesDesc = "Switch to build agent despite unchecked checklist items"
+    noLabel = "No, stay in plan mode"
+    noDesc = "Stay with plan agent to complete the checklist"
+  } else {
+    const summary = buildSummaryBullets(checked, hasChecklist)
+    questionText =
+      `Ready to start the build. Here is what will be implemented:\n\n${summary}\n\nProceed and switch to build mode?`
+    headerText = "Start Build"
+    yesLabel = "Yes, start build"
+    yesDesc = "Switch to build agent and begin implementing"
+    noLabel = "No, not yet"
+    noDesc = "Stay in plan mode"
+  }
 
   const answers = yield* question.ask({
     sessionID,
-    tool: toolRef,
     questions: [
       {
-        header: "Build Gate",
-        question: [
-          `Build Gate: ${unchecked.length} item(s) in PLAN_CHECKLIST.md still unchecked.`,
-          "",
-          warningList,
-          "",
-          checked.length > 0 ? `${checked.length} item(s) completed. ` : "",
-          "Override the gate and proceed with build anyway?",
-        ].join("\n"),
-        options: [
-          { label: "Override", description: "Proceed with build despite unchecked checklist items" },
-          { label: "Cancel", description: "Cancel this tool call and stay in build mode" },
-        ],
+        question: questionText,
+        header: headerText,
         custom: false,
+        options: [
+          { label: yesLabel, description: yesDesc },
+          { label: noLabel, description: noDesc },
+        ],
       },
     ],
+    tool: toolRef,
   })
 
   const choice = answers[0]?.[0]
-  if (choice === "Override") return { status: Overridden } as GateResult
+  if (choice === yesLabel) return { status: unchecked.length > 0 ? Overridden : Passed } as GateResult
   return { status: Blocked, uncheckedItems: unchecked } as GateResult
 })
+
+function buildSummaryBullets(checkedItems: string[], hasChecklist: boolean): string {
+  if (!hasChecklist || checkedItems.length === 0)
+    return "• Implement the plan as described in the plan document"
+
+  const bullets = checkedItems.slice(0, 5)
+  if (checkedItems.length > 5) bullets.push(`…and ${checkedItems.length - 5} more steps`)
+  return bullets.map((item) => `• ${item}`).join("\n")
+}
 
 export * as BuildGate from "./build-gate"

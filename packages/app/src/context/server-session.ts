@@ -17,6 +17,7 @@ import { diffs as cleanDiffs, message as cleanMessage } from "@/utils/diffs"
 import { sessionNotFoundError } from "@/utils/server-errors"
 import { rootSession } from "@/utils/session-route"
 import { dropSessionCaches, pickSessionCacheEvictions, SESSION_CACHE_LIMIT } from "./global-sync/session-cache"
+import type { BudgetNotice } from "./global-sync/types"
 
 const cmp = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0)
 const cmpMessage = (a: Message, b: Message) => a.time.created - b.time.created || cmp(a.id, b.id)
@@ -145,6 +146,7 @@ export function createServerSession(client: OpencodeClient, options?: { retry?: 
     question: {} as Record<string, QuestionRequest[]>,
     message: {} as Record<string, Message[]>,
     part: {} as Record<string, Part[]>,
+    budget_notice: {} as Record<string, BudgetNotice>,
     part_text_accum_delta: {} as Record<string, string>,
     session_working(id: string) {
       return (this.session_status[id]?.type ?? "idle") !== "idle"

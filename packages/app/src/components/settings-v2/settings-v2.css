@@ -281,7 +281,7 @@
   line-height: 1;
   color: var(--v2-text-text-muted);
   opacity: 0;
-  transition: opacity 200ms ease;
+  transition: none;
   cursor: default;
 }
 

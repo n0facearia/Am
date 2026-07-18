@@ -8,6 +8,7 @@ import type {
   SnapshotFileDiff,
   Todo,
 } from "@opencode-ai/sdk/v2/client"
+import type { BudgetNotice } from "./types"
 import { dropSessionCaches, pickSessionCacheEvictions } from "./session-cache"
 
 const msg = (id: string, sessionID: string) =>
@@ -39,6 +40,7 @@ describe("app session cache", () => {
       part: Record<string, Part[] | undefined>
       permission: Record<string, PermissionRequest[] | undefined>
       question: Record<string, QuestionRequest[] | undefined>
+      budget_notice: Record<string, BudgetNotice | undefined>
       part_text_accum_delta: Record<string, string | undefined>
     } = {
       session_status: { ses_1: { type: "busy" } as SessionStatus },
@@ -48,6 +50,7 @@ describe("app session cache", () => {
       part: { msg_1: [part("prt_1", "ses_1", "msg_1")] },
       permission: { ses_1: [] as PermissionRequest[] },
       question: { ses_1: [] as QuestionRequest[] },
+      budget_notice: {},
       part_text_accum_delta: { prt_1: "streamed text" },
     }
 
@@ -73,6 +76,7 @@ describe("app session cache", () => {
       part: Record<string, Part[] | undefined>
       permission: Record<string, PermissionRequest[] | undefined>
       question: Record<string, QuestionRequest[] | undefined>
+      budget_notice: Record<string, BudgetNotice | undefined>
       part_text_accum_delta: Record<string, string | undefined>
     } = {
       session_status: {},
@@ -82,6 +86,7 @@ describe("app session cache", () => {
       part: { [m.id]: [part("prt_1", "ses_1", m.id)] },
       permission: {},
       question: {},
+      budget_notice: {},
       part_text_accum_delta: {},
     }
 
