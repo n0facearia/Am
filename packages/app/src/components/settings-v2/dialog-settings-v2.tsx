@@ -1,4 +1,4 @@
-import { Component, createSignal, startTransition } from "solid-js"
+import { Component, createSignal, startTransition, Suspense } from "solid-js"
 import { Dialog } from "@opencode-ai/ui/v2/dialog-v2"
 import { TabsV2 } from "@opencode-ai/ui/v2/tabs-v2"
 import { Icon } from "@opencode-ai/ui/icon"
@@ -98,7 +98,9 @@ export const DialogSettings: Component<{
           <SettingsModelsV2 />
         </TabsV2.Content>
         <TabsV2.Content value="agents" class="settings-v2-panel">
-          <SettingsAgentsV2 />
+          <Suspense fallback={<div class="p-4 text-v2-text-text-muted">Loading agents...</div>}>
+            <SettingsAgentsV2 />
+          </Suspense>
         </TabsV2.Content>
       </TabsV2>
     </Dialog>

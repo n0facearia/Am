@@ -4,6 +4,7 @@ import { DebugBar } from "@/components/debug-bar"
 import { HelpButton } from "@/components/help-button"
 import { Titlebar, type TitlebarUpdate } from "@/components/titlebar"
 import { usePlatform } from "@/context/platform"
+import { PersonaSwitcher } from "@/components/persona-switcher"
 import { setNavigate } from "@/utils/notification-click"
 import { setV2Toast, ToastRegion } from "@/utils/toast"
 import { useSettingsCommand } from "@/components/settings-dialog"
@@ -46,6 +47,22 @@ export default function NewLayout(props: ParentProps) {
       }}
     >
       <Titlebar update={update} />
+      <div class="fixed inset-0 pointer-events-none z-0" style={{
+        "background-image": "radial-gradient(circle, var(--v2-background-bg-layer-04) 1px, transparent 1px)",
+        "background-size": "20px 20px",
+        "opacity": "0.15",
+        "animation": "halftone-pan 20s linear infinite"
+      }} />
+      <style>{`
+        @keyframes halftone-pan {
+          0% { background-position: 0px 0px; }
+          100% { background-position: 20px 20px; }
+        }
+      `}</style>
+
+      <div class="absolute top-[env(safe-area-inset-top,10px)] left-20 z-50 pointer-events-none">
+        <PersonaSwitcher />
+      </div>
 
       <main class="flex-1 min-h-0 min-w-0 overflow-x-hidden flex flex-col items-start contain-strict mt-8">
         <Suspense fallback={<div class="flex-1" />}>{props.children}</Suspense>
