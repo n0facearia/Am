@@ -11,7 +11,7 @@ import { useSettingsCommand } from "@/components/settings-dialog"
 // @ts-ignore
 import brandConfig from "../../../../brand.config.json"
 
-export default function NewLayout(props: ParentProps) {
+export default function NewLayout(props: ParentProps<{ serverScoped?: any }>) {
   const platform = usePlatform()
   const navigate = useNavigate()
   setNavigate(navigate)
@@ -63,6 +63,7 @@ export default function NewLayout(props: ParentProps) {
 
 
       <main class="flex-1 min-h-0 min-w-0 overflow-x-hidden flex flex-col items-start contain-strict mt-8">
+        {props.serverScoped}
         <Suspense fallback={<div class="flex-1" />}>{props.children}</Suspense>
       </main>
       {import.meta.env.DEV && <DebugBar inline />}
