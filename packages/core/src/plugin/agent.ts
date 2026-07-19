@@ -151,6 +151,8 @@ export const Plugin = define({
     const settings = settingsText ? JSON.parse(settingsText) : null
 
     const customInstructions = settings?.customInstructions ?? {}
+    const customSkills = settings?.customSkills ?? {}
+
     const instructionContents = new Map<string, string>()
     for (const [role, paths] of Object.entries(customInstructions)) {
       if (Array.isArray(paths)) {
@@ -186,6 +188,22 @@ export const Plugin = define({
           }
 
           item.system = (item.system ?? "") + profilePrompt
+
+          // Assign explicit allow rules for skills mapped to this agent
+          const allowedSkills = customSkills[id] ?? []
+          for (const skill of allowedSkills) {
+            item.permissions.push({ action: "skill", resource: skill, effect: "allow" })
+          }
+
+          // Deny skills that are specifically mapped to *other* agents (and not this one)
+          for (const [otherId, skills] of Object.entries(customSkills)) {
+            if (otherId === id || !Array.isArray(skills)) continue
+            for (const skill of skills) {
+              if (!allowedSkills.includes(skill)) {
+                item.permissions.push({ action: "skill", resource: skill, effect: "deny" })
+              }
+            }
+          }
         })
       }
 

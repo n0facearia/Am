@@ -432,15 +432,14 @@ function ConnectionGate(props: ParentProps<{ disableHealthCheck?: boolean; start
   const loading = createMemo(() => checking() || startupChecking())
 
   createEffect(() => {
-    console.log("[gate] ConnectionGate render check:", {
+    console.log("[gate] ConnectionGate render check: " + JSON.stringify({
+      startupHealthCheck: startupHealthCheck.state,
       checking: checking(),
-      startupHealthCheckState: startupHealthCheck.state,
-      startupHealthCheckLatest: startupHealthCheck.latest,
       startupChecking: startupChecking(),
       startupState: startup.state,
       loading: loading(),
       hasStartupProp: !!props.startup,
-    })
+    }))
   })
 
   return (

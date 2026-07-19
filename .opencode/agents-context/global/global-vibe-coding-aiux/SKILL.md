@@ -1,12 +1,15 @@
 ---
 name: global-vibe-coding-aiux
+vibe-coding
 description: "Build software with AI coding tools as a non-traditional developer: prompting patterns, iteration loops, and shipping working prototypes in Cursor or ..."
+Help users build software using AI coding tools. Use when someone is using AI to generate code, building prototypes without deep technical skills, or exploring how non-engineers can create functional software through natural language.
 ---
-# Vibe Coding · Engineering Agent Skill | AI UX Playground
+# global-vibe-coding-aiux
+vibe-coding
+
+"Build software with AI coding tools as a non-traditional developer: prompting patterns, iteration loops, and shipping working prototypes in Cursor or ..."
+Help users build software using AI coding tools. Use when someone is using AI to generate code, building prototypes without deep technical skills, or exploring how non-engineers can create functional software through natural language.
 
 **Reference URL:** https://aiuxplayground.com/skills/vibe-coding/
 
-**Summary / Fair Use Snippet:**
-Vibe Coding · Engineering Agent Skill | AI UX Playground HomeLearnBuildGet inspiredNewsletterSubscribeHomeSkillsEngineeringVibe CodingSkill·Engineering·Updated May 18, 2026Vibe CodingRefound AI·590Build software with AI coding tools as a non-traditional developer: prompting patterns, iteration loops, and shipping working prototypes in Cursor or Claude Code.SKILL.mdInstallShareHow to installCursorClaudeCodexOthersnpx skills add github.com/RefoundAI/lenny-skills/tree/main/skills/vibe-coding --skil
-
-*(This source is restrictively licensed or unclear, so its raw content is not bundled. Use the link to fetch live data if needed via your tools.)*
+*(This source falls under default copyright (no explicit open license), so its content is not bundled. Use the link to fetch live data if needed via your tools.)*

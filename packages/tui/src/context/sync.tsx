@@ -29,6 +29,8 @@ import { createSimpleContext } from "./helper"
 import { useExit } from "./exit"
 import { useArgs } from "./args"
 import { batch, onMount } from "solid-js"
+import { loadOpenCodeSessions } from "@opencode-ai/core/opencode-import"
+import type { OpenCodeImportResult } from "@opencode-ai/core/opencode-import"
 import path from "path"
 import { useKV } from "./kv"
 import { usePermission } from "./permission"
@@ -110,6 +112,7 @@ export const {
       }
       formatter: FormatterStatus[]
       vcs: VcsInfo | undefined
+      opencode: OpenCodeImportResult
     }>({
       provider_next: {
         all: [],
@@ -140,6 +143,7 @@ export const {
       mcp_resource: {},
       formatter: [],
       vcs: undefined,
+      opencode: { sessions: [], available: false, dbPath: undefined },
     })
 
     const event = useEvent()
@@ -534,6 +538,10 @@ export const {
             sdk.client.provider.auth({ workspace }).then((x) => setStore("provider_auth", reconcile(x.data ?? {}))),
             sdk.client.vcs.get({ workspace }).then((x) => setStore("vcs", reconcile(x.data))),
             project.workspace.sync(),
+            loadOpenCodeSessions().then((result) => {
+              tuiLog(`[sync] opencode import: available=${result.available} count=${result.sessions.length} dbPath=${result.dbPath}`)
+              setStore("opencode", result)
+            }),
           ]).then(() => {
             setStore("status", "complete")
           })

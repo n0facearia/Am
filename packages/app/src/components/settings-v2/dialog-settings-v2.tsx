@@ -10,7 +10,7 @@ import { SettingsProvidersV2 } from "./providers"
 import { SettingsModelsV2 } from "./models"
 import "./settings-v2.css"
 import { SettingsServersV2 } from "./servers"
-import { SettingsAgentsV2 } from "./agents"
+import { SettingsContextV2 } from "./context"
 import { useDialog } from "@opencode-ai/ui/context/dialog"
 
 export const DialogSettings: Component<{
@@ -68,9 +68,9 @@ export const DialogSettings: Component<{
                       <Icon name="models" />
                       {language.t("settings.models.title")}
                     </TabsV2.Trigger>
-                    <TabsV2.Trigger value="agents">
+                    <TabsV2.Trigger value="context">
                       <Icon name="brain" />
-                      Agents
+                      Context
                     </TabsV2.Trigger>
                   </div>
                 </div>
@@ -97,9 +97,9 @@ export const DialogSettings: Component<{
         <TabsV2.Content value="models" class="settings-v2-panel">
           <SettingsModelsV2 />
         </TabsV2.Content>
-        <TabsV2.Content value="agents" class="settings-v2-panel">
-          <Suspense fallback={<div class="p-4 text-v2-text-text-muted">Loading agents...</div>}>
-            <SettingsAgentsV2 />
+        <TabsV2.Content value="context" class="settings-v2-panel">
+          <Suspense fallback={<div class="p-4 text-v2-text-text-muted">Loading context...</div>}>
+            <SettingsContextV2 />
           </Suspense>
         </TabsV2.Content>
       </TabsV2>

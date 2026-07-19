@@ -262,7 +262,20 @@ export function DialogSessionList() {
       })
       .filter((x) => x !== undefined)
 
-    return [...pinned.map((id) => buildOption(id, "Pinned")).filter((x) => x !== undefined), ...remaining]
+    const opencodeOptions = sync.data.opencode.available
+      ? sync.data.opencode.sessions.map((s) => ({
+          title: s.title,
+          value: "\x00oc:" + s.id,
+          category: "From OpenCode",
+          footer: s.directory ? path.basename(s.directory) : "",
+        }))
+      : []
+
+    return [
+      ...pinned.map((id) => buildOption(id, "Pinned")).filter((x) => x !== undefined),
+      ...remaining,
+      ...opencodeOptions,
+    ]
   })
 
   onMount(() => {
@@ -281,6 +294,14 @@ export function DialogSessionList() {
         setToDelete(undefined)
       }}
       onSelect={(option) => {
+        if (option.value.startsWith("\x00oc:")) {
+          toast.show({
+            title: "From OpenCode",
+            message: "OpenCode sessions cannot be opened in AM. They are shown here for reference only.",
+            variant: "info",
+          })
+          return
+        }
         route.navigate({
           type: "session",
           sessionID: option.value,
@@ -292,6 +313,7 @@ export function DialogSessionList() {
           command: "session.pin.toggle",
           title: "pin/unpin",
           onTrigger: (option: { value: string }) => {
+            if (option.value.startsWith("\x00oc:")) return
             local.session.togglePin(option.value)
           },
         },
@@ -299,6 +321,7 @@ export function DialogSessionList() {
           command: "session.delete",
           title: "delete",
           onTrigger: async (option) => {
+            if (option.value.startsWith("\x00oc:")) return
             if (toDelete() === option.value) {
               const session = sessions().find((item) => item.id === option.value)
               const status = session?.workspaceID ? project.workspace.status(session.workspaceID) : undefined
@@ -348,6 +371,7 @@ export function DialogSessionList() {
           command: "session.rename",
           title: "rename",
           onTrigger: async (option) => {
+            if (option.value.startsWith("\x00oc:")) return
             dialog.replace(() => <DialogSessionRename session={option.value} />)
           },
         },

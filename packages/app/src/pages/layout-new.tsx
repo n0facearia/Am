@@ -29,18 +29,12 @@ export default function NewLayout(props: ParentProps<{ serverScoped?: any }>) {
     install: () => void platform.updater?.install(),
   }
 
-  // Accent color from brand config — no route-scoped context needed
-  const currentAccent = createMemo(() => {
-    return (brandConfig?.accentColorsByMode as any)?.["chat"] || "#3B82F6"
-  })
-
   return (
     <div
       class="relative bg-v2-background-bg-deep flex-1 min-h-0 min-w-0 flex flex-col select-none [&_input]:select-text [&_textarea]:select-text [&_[contenteditable]]:select-text transition-colors duration-250 ease-in-out"
       style={{
         "padding-top": "env(safe-area-inset-top, 0px)",
         "padding-bottom": "env(safe-area-inset-bottom, 0px)",
-        "--agent-current-accent": currentAccent(),
         ...(brandConfig?.accentColorsByMode ? Object.fromEntries(
           Object.entries(brandConfig.accentColorsByMode).map(([key, val]) => [`--agent-${key}-accent`, val])
         ) : {})

@@ -6,7 +6,9 @@ import { type Accessor, createEffect, createMemo, createResource, onCleanup, typ
 import { useLanguage } from "@/context/language"
 import { LocalProvider } from "@/context/local"
 import { useSettings } from "@/context/settings"
-import { PersonaSwitcher } from "@/components/persona-switcher"
+import { ModeSwitcher } from "@/components/mode-switcher"
+import { AgentSidebar } from "@/components/agent-sidebar"
+import { ChatBackground } from "@/components/chat-background"
 import { SDKProvider } from "@/context/sdk"
 import { useSync } from "@/context/sync"
 import { decode64 } from "@/utils/base64"
@@ -69,12 +71,57 @@ export function DirectoryDataProvider(
           onSessionHref={href}
         >
           <LocalProvider>
-            <Show when={useSettings().general.newLayoutDesigns()}>
-              <div class="absolute top-[env(safe-area-inset-top,10px)] left-20 z-[60] pointer-events-none">
-                <PersonaSwitcher />
+            <Show
+              when={useSettings().general.newLayoutDesigns()}
+              fallback={props.children}
+            >
+              <style>{`
+                .mode-tab-active {
+                  color: #FFFFFF;
+                  background: linear-gradient(135deg, color-mix(in srgb, var(--agent-current-accent, var(--v2-background-bg-layer-02)) 70%, white), color-mix(in srgb, var(--agent-current-accent, var(--v2-background-bg-layer-02)) 70%, black));
+                }
+
+                .mode-tab-active::before {
+                  content: "";
+                  position: absolute;
+                  inset: 0;
+                  pointer-events: none;
+                  background-image: radial-gradient(circle at center, color-mix(in srgb, var(--agent-current-accent, white) 50%, white) 2px, transparent 2.5px);
+                  background-size: 6px 6px;
+                  opacity: 0;
+                  z-index: 0;
+                  animation: mode-tab-halftone 400ms ease-in-out;
+                }
+
+                @keyframes mode-tab-halftone {
+                  0% {
+                    opacity: 0;
+                    filter: contrast(1) blur(0px);
+                    transform: scale(0.9);
+                  }
+                  50% {
+                    opacity: 0.6;
+                    filter: contrast(20) blur(1px);
+                    transform: scale(1.05);
+                  }
+                  100% {
+                    opacity: 0;
+                    filter: contrast(1) blur(0px);
+                    transform: scale(1.1);
+                  }
+                }
+              `}</style>
+              <div class="flex w-full h-full min-h-0 min-w-0 relative z-0">
+                <ChatBackground />
+                <AgentSidebar />
+                <div class="flex-1 min-h-0 min-w-0 flex flex-col relative transition-all duration-300">
+                  <div class="absolute top-[env(safe-area-inset-top,10px)] left-1/2 -translate-x-1/2 z-[60] pointer-events-none">
+                    <ModeSwitcher />
+                  </div>
+                  {props.children}
+                </div>
               </div>
             </Show>
-            {props.children}
           </LocalProvider>
         </DataProvider>
       )}

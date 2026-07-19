@@ -14,6 +14,7 @@ const SettingsInfo = Schema.Struct({
   ),
   agentModels: Schema.optional(Schema.Record(Schema.String, Schema.String)),
   customInstructions: Schema.optional(Schema.Record(Schema.String, Schema.Array(Schema.String))),
+  customSkills: Schema.optional(Schema.Record(Schema.String, Schema.Array(Schema.String))),
   userProfile: Schema.optional(
     Schema.Struct({
       preferredName: Schema.optional(Schema.String),

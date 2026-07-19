@@ -17,6 +17,10 @@ export const FileQuery = Schema.Struct({
   path: Schema.String,
 })
 
+export const WriteFilePayload = Schema.Struct({
+  content: Schema.String,
+})
+
 export const FindTextQuery = Schema.Struct({
   ...WorkspaceRoutingQueryFields,
   pattern: Schema.String,
@@ -99,6 +103,7 @@ export const FilePaths = {
   list: "/file",
   content: "/file/content",
   status: "/file/status",
+  write: "/file/write",
 } as const
 
 export const FileApi = HttpApi.make("file")
@@ -163,6 +168,17 @@ export const FileApi = HttpApi.make("file")
             identifier: "file.status",
             summary: "Get file status",
             description: "Get the git status of all files in the project.",
+          }),
+        ),
+        HttpApiEndpoint.post("write", FilePaths.write, {
+          query: FileQuery,
+          payload: WriteFilePayload,
+          success: described(Schema.Boolean, "File written successfully"),
+        }).annotateMerge(
+          OpenApi.annotations({
+            identifier: "file.write",
+            summary: "Write file",
+            description: "Write content to a specified file in the project.",
           }),
         ),
       )

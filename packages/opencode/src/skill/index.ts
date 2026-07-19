@@ -205,6 +205,7 @@ const discoverSkills = Effect.fnUntraced(function* (
   const configDirs = yield* config.directories()
   for (const dir of configDirs) {
     yield* scan(state, dir, OPENCODE_SKILL_PATTERN)
+    yield* scan(state, path.join(dir, "agents-context"), SKILL_PATTERN)
   }
 
   const cfg = yield* config.get()

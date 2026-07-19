@@ -1484,6 +1484,7 @@ export type GlobalEvent = {
           worktree: string
           vcs?: ProjectVcs
           name?: string
+          description?: string
           icon?: ProjectIcon
           commands?: ProjectCommands
           time: ProjectTime
@@ -2421,6 +2422,7 @@ export type Project = {
   worktree: string
   vcs?: ProjectVcs
   name?: string
+  description?: string
   icon?: ProjectIcon
   commands?: ProjectCommands
   time: ProjectTime
@@ -2594,6 +2596,27 @@ export type SessionBusyError = {
   _tag: "SessionBusyError"
   sessionID: string
   message: string
+}
+
+export type SettingsInfo = {
+  budgetGuardian?: {
+    fallbackModels?: Array<string>
+    contextThreshold?: number | "NaN" | "Infinity" | "-Infinity" | "Infinity" | "-Infinity" | "NaN"
+  }
+  agentModels?: {
+    [key: string]: string
+  }
+  customInstructions?: {
+    [key: string]: Array<string>
+  }
+  customSkills?: {
+    [key: string]: Array<string>
+  }
+  userProfile?: {
+    preferredName?: string
+    bio?: string
+    experienceLevel?: string
+  }
 }
 
 export type EventTuiPromptAppend = {
@@ -5898,6 +5921,7 @@ export type ProjectUpdated = {
     worktree: string
     vcs?: ProjectVcs
     name?: string
+    description?: string
     icon?: ProjectIcon
     commands?: ProjectCommands
     time: ProjectTime
@@ -6916,6 +6940,7 @@ export type EventProjectUpdated = {
     worktree: string
     vcs?: ProjectVcs
     name?: string
+    description?: string
     icon?: ProjectIcon
     commands?: ProjectCommands
     time: ProjectTime
@@ -8075,6 +8100,37 @@ export type FileStatusResponses = {
 }
 
 export type FileStatusResponse = FileStatusResponses[keyof FileStatusResponses]
+
+export type FileWriteData = {
+  body?: {
+    content: string
+  }
+  path?: never
+  query: {
+    directory?: string
+    workspace?: string
+    path: string
+  }
+  url: "/file/write"
+}
+
+export type FileWriteErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError
+}
+
+export type FileWriteError = FileWriteErrors[keyof FileWriteErrors]
+
+export type FileWriteResponses = {
+  /**
+   * File written successfully
+   */
+  200: boolean
+}
+
+export type FileWriteResponse = FileWriteResponses[keyof FileWriteResponses]
 
 export type InstanceDisposeData = {
   body?: never
@@ -10470,6 +10526,62 @@ export type PartUpdateResponses = {
 }
 
 export type PartUpdateResponse = PartUpdateResponses[keyof PartUpdateResponses]
+
+export type SettingsGetData = {
+  body?: never
+  path?: never
+  query?: {
+    directory?: string
+    workspace?: string
+  }
+  url: "/settings"
+}
+
+export type SettingsGetErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError
+}
+
+export type SettingsGetError = SettingsGetErrors[keyof SettingsGetErrors]
+
+export type SettingsGetResponses = {
+  /**
+   * Get project settings
+   */
+  200: SettingsInfo
+}
+
+export type SettingsGetResponse = SettingsGetResponses[keyof SettingsGetResponses]
+
+export type SettingsUpdateData = {
+  body?: SettingsInfo
+  path?: never
+  query?: {
+    directory?: string
+    workspace?: string
+  }
+  url: "/settings"
+}
+
+export type SettingsUpdateErrors = {
+  /**
+   * BadRequest | InvalidRequestError
+   */
+  400: EffectHttpApiErrorBadRequest | InvalidRequestError
+}
+
+export type SettingsUpdateError = SettingsUpdateErrors[keyof SettingsUpdateErrors]
+
+export type SettingsUpdateResponses = {
+  /**
+   * Successfully updated settings
+   */
+  200: SettingsInfo
+}
+
+export type SettingsUpdateResponse = SettingsUpdateResponses[keyof SettingsUpdateResponses]
 
 export type SyncStartData = {
   body?: never

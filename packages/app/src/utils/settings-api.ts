@@ -8,6 +8,7 @@ export interface SettingsData {
   }
   agentModels?: Record<string, string>
   customInstructions?: Record<string, string[]>
+  customSkills?: Record<string, string[]>
   userProfile?: {
     preferredName?: string
     bio?: string

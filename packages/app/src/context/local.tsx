@@ -15,6 +15,7 @@ import { ScopedKey, type ServerScope } from "@/utils/server-scope"
 export type ModelKey = { providerID: string; modelID: string; variant?: string }
 
 type State = {
+  mode?: string
   agent?: string
   model?: ModelKey
   variant?: string | null
@@ -22,6 +23,7 @@ type State = {
 
 type Saved = {
   session: Record<string, State | undefined>
+  agentLLMs?: Record<string, { model: ModelKey; variant: string | null }>
 }
 
 const WORKSPACE_KEY = "__workspace__"
@@ -35,13 +37,17 @@ const migrate = (value: unknown) => {
   const item = value as {
     session?: Record<string, State | undefined>
     pick?: Record<string, State | undefined>
+    agentLLMs?: Record<string, { model: ModelKey; variant: string | null }>
   }
 
-  if (item.session && typeof item.session === "object") return { session: item.session }
-  if (!item.pick || typeof item.pick !== "object") return { session: {} }
+  const agentLLMs = item.agentLLMs ?? {}
+
+  if (item.session && typeof item.session === "object") return { session: item.session, agentLLMs }
+  if (!item.pick || typeof item.pick !== "object") return { session: {}, agentLLMs }
 
   return {
     session: Object.fromEntries(Object.entries(item.pick).filter(([key]) => key !== WORKSPACE_KEY)),
+    agentLLMs,
   }
 }
 
@@ -74,10 +80,12 @@ export const { use: useLocal, useOptional: useLocalOptional, provider: LocalProv
       },
       createStore<Saved>({
         session: {},
+        agentLLMs: {},
       }),
     )
 
     const [store, setStore] = createStore<{
+      currentMode?: string
       current?: string
       draft?: State
       promoting?: State
@@ -88,6 +96,7 @@ export const { use: useLocal, useOptional: useLocalOptional, provider: LocalProv
         variant?: string | null
       }
     }>({
+      currentMode: "main",
       current: list()[0]?.name,
       draft: undefined,
       last: undefined,
@@ -178,6 +187,30 @@ export const { use: useLocal, useOptional: useLocalOptional, provider: LocalProv
 
     const fallback = createMemo<ModelKey | undefined>(() => configuredModel() ?? recentModel() ?? defaultModel())
 
+    const mode = {
+      current() {
+        return scope()?.mode ?? store.currentMode ?? "main"
+      },
+      set(m: string) {
+        batch(() => {
+          setStore("currentMode", m)
+          const session = id()
+          if (session) {
+            const currentSession = saved.session[session]
+            if (currentSession) {
+               setSaved("session", session, { ...currentSession, mode: m })
+            } else {
+               setSaved("session", session, { mode: m, agent: agent.current()?.name })
+            }
+          } else {
+            const draft = store.draft
+            if (draft) setStore("draft", { ...draft, mode: m })
+            else setStore("draft", { mode: m, agent: agent.current()?.name })
+          }
+        })
+      }
+    }
+
     const agent = {
       list,
       current() {
@@ -199,10 +232,14 @@ export const { use: useLocal, useOptional: useLocalOptional, provider: LocalProv
             variant: item.variant ?? null,
           })
           const prev = scope()
+          
+          const savedLLM = saved.agentLLMs?.[item.name]
+
           const next = {
+            mode: mode.current(),
             agent: item.name,
-            model: item.model ?? prev?.model,
-            variant: item.variant ?? prev?.variant,
+            model: savedLLM?.model ?? item.model ?? prev?.model,
+            variant: savedLLM?.variant ?? item.variant ?? prev?.variant,
           } satisfies State
           const session = id()
           if (session) {
@@ -253,6 +290,7 @@ export const { use: useLocal, useOptional: useLocalOptional, provider: LocalProv
     const snapshot = () => {
       const model = current()
       return {
+        mode: mode.current(),
         agent: agent.current()?.name,
         model: model ? { providerID: model.provider.id, modelID: model.id } : undefined,
         variant: selected(),
@@ -261,7 +299,7 @@ export const { use: useLocal, useOptional: useLocalOptional, provider: LocalProv
 
     const write = (next: Partial<State>) => {
       const state = {
-        ...(scope() ?? { agent: agent.current()?.name }),
+        ...(scope() ?? { mode: mode.current(), agent: agent.current()?.name }),
         ...next,
       } satisfies State
 
@@ -306,6 +344,12 @@ export const { use: useLocal, useOptional: useLocalOptional, provider: LocalProv
               variant: selected(),
             })
             write({ model: item })
+            
+            const currentAgent = agent.current()?.name
+            if (currentAgent && item) {
+              setSaved("agentLLMs", currentAgent, { model: item, variant: selected() ?? null })
+            }
+
             if (!item) return
             models.setVisibility(item, true)
             if (!options?.recent) return
@@ -350,6 +394,15 @@ export const { use: useLocal, useOptional: useLocalOptional, provider: LocalProv
                 variant: value ?? null,
               })
               write({ variant: value ?? null })
+              
+              const currentAgent = agent.current()?.name
+              if (currentAgent && model) {
+                 setSaved("agentLLMs", currentAgent, {
+                    model: { providerID: model.provider.id, modelID: model.id },
+                    variant: value ?? null
+                 })
+              }
+
               if (model) {
                 models.variant.set({ providerID: model.provider.id, modelID: model.id }, value ?? undefined)
               }
@@ -372,6 +425,7 @@ export const { use: useLocal, useOptional: useLocalOptional, provider: LocalProv
 
     const result = {
       slug: createMemo(() => base64Encode(sdk().directory)),
+      mode,
       model,
       agent,
       session: {
@@ -399,6 +453,7 @@ export const { use: useLocal, useOptional: useLocalOptional, provider: LocalProv
           if (handoff.has(handoffKey(serverSDK().scope, sdk().directory, session))) return
 
           setSaved("session", session, {
+            mode: store.currentMode ?? "main",
             agent: msg.agent,
             model: msg.model,
             variant: msg.model?.variant ?? null,
