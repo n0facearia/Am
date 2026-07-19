@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # AM CLI — one-line install script
-# Usage: curl -fsSL https://raw.githubusercontent.com/n0facearia/Am/main/install.sh | bash
+# Usage: curl -fsSL https://raw.githubusercontent.com/n0facearia/Am/dev/install.sh | bash
 #
 # Supported platforms:
 #   Linux (x86_64, arm64, x86_64-baseline) — glibc or musl

@@ -1,5 +1,5 @@
 # AM CLI — Windows one-line install script
-# Usage: irm https://raw.githubusercontent.com/n0facearia/Am/main/install.ps1 | iex
+# Usage: irm https://raw.githubusercontent.com/n0facearia/Am/dev/install.ps1 | iex
 #
 # Downloads the Windows binary and adds it to the user's PATH.
 

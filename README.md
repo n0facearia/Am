@@ -21,56 +21,93 @@ AM is a fork of [OpenCode](https://github.com/anthropics/opencode) with its own 
 
 ## Install
 
-### Prerequisites
+AM provides standalone binaries with no runtime dependencies — no Bun, Node, or Python required.
 
-- **Linux** (x86_64) — tested on Arch Linux
-- **macOS** (arm64, x64) — build targets exist but **untested** in this environment
-- **Windows** (arm64, x64) — build targets exist but **untested**
-- [Bun](https://bun.sh) v1.3+ (runtime)
+> **Tested platforms**: ✅ Linux (x86_64) install tested in-session.  
+> **Untested platforms**: macOS, Windows — the build artifacts exist but have not been verified in this environment. Commands are provided as written.
 
-### One-line install (Linux x86_64)
+---
 
-```bash
-# Install am-cli (TUI) and am-desktop (Electron app)
-curl -fsSL https://github.com/n0facearia/Am/releases/latest/download/install.sh | bash
-```
+### TUI (am-cli) — Terminal app
 
-> **Note**: The install script above is a placeholder until the first release is cut. See [Build from source](#build-from-source) below for now.
-
-### Desktop AppImage
-
-The desktop build produces a self-contained AppImage at:
-
-```
-packages/desktop/dist/am-desktop-linux-x86_64.AppImage
-```
-
-Install it:
+#### Linux / macOS
 
 ```bash
-# After building (see Build from source)
-cp packages/desktop/dist/am-desktop-linux-x86_64.AppImage ~/.local/bin/am-desktop
+curl -fsSL https://raw.githubusercontent.com/n0facearia/Am/dev/install.sh | bash
+```
+
+The script detects your OS (Linux/macOS) and architecture (x64/arm64), downloads the correct binary from the [latest release](https://github.com/n0facearia/Am/releases), and places `am-cli` in `~/.local/bin/`. If `~/.local/bin` is not on your PATH, the script adds it to your shell config.
+
+✅ **Tested**: Linux x86_64 — confirmed working via real run.  
+❓ **Untested**: macOS arm64/x64 — script is written and should work, but not verified in this environment.
+
+#### Windows (PowerShell)
+
+```powershell
+irm https://raw.githubusercontent.com/n0facearia/Am/dev/install.ps1 | iex
+```
+
+Downloads the Windows binary, places it in `%LOCALAPPDATA%\Programs\AM`, and adds it to your user PATH.
+
+❓ **Untested**: Windows — script is written but not verified in this environment.
+
+---
+
+### Desktop (am-desktop) — Electron app
+
+#### Linux
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/n0facearia/Am/dev/install-desktop.sh | bash
+```
+
+On Debian/Ubuntu, installs the `.deb` package via `dpkg`. On other Linux distros (Fedora, Arch, etc.), downloads the AppImage to `~/.local/bin/am-desktop` and creates a desktop entry.
+
+✅ **Tested**: Linux (Arch Linux) — confirmed AppImage download + install via real run.  
+❓ **Untested**: Debian/Ubuntu `.deb` path — script logic is written but not verified in this environment.
+
+#### Direct AppImage download (zero install — just download and run)
+
+You can always download the latest AppImage directly — no script, no setup:
+
+```bash
+# Download
+curl -fsSL -o ~/.local/bin/am-desktop https://github.com/n0facearia/Am/releases/download/v0.1.0/am-desktop-linux-x86_64.AppImage
+
+# Make executable
 chmod +x ~/.local/bin/am-desktop
+
+# Run
+am-desktop
 ```
+
+Or download from the [release page](https://github.com/n0facearia/Am/releases/tag/v0.1.0) manually.
+
+#### macOS
+
+A macOS build exists (`am-desktop-mac-x64.zip`, 361MB) attached to the [release](https://github.com/n0facearia/Am/releases/tag/v0.1.0), but it is **unsigned** — Gatekeeper will block it unless you right-click → Open. No one-line install command is provided because the build hasn't been tested or notarized.
+
+#### Windows
+
+A Windows build exists (`am-desktop-win-x64.exe`, 120MB) attached to the [release](https://github.com/n0facearia/Am/releases/tag/v0.1.0), but it is **unsigned** — SmartScreen will show a warning. No one-line install command is provided because the build hasn't been tested.
+
+---
 
 ### Build from source
+
+If you prefer to build from source or need to modify the code:
 
 ```bash
 git clone https://github.com/n0facearia/Am.git
 cd Am
 bun install
 
-# Build the CLI binary
-bun run --cwd packages/opencode build
+# Build the CLI binary (output: packages/opencode/dist/)
+bun run --cwd packages/opencode build --single
 
 # Build the Desktop app (requires Electron build deps)
 bash install-desktop.sh
 ```
-
-Build outputs:
-- `packages/opencode/dist/am-cli-linux-x64/bin/am-cli` — TUI binary
-- `packages/desktop/dist/am-desktop-linux-x86_64.AppImage` — Desktop app
-- `packages/desktop/dist/am-desktop-linux-amd64.deb` — Debian package
 
 ---
 
