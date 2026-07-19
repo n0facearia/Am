@@ -47,18 +47,7 @@ export default function NewLayout(props: ParentProps<{ serverScoped?: any }>) {
       }}
     >
       <Titlebar update={update} />
-      <div class="fixed inset-0 pointer-events-none z-0" style={{
-        "background-image": "radial-gradient(circle, var(--v2-background-bg-layer-04) 1px, transparent 1px)",
-        "background-size": "20px 20px",
-        "opacity": "0.15",
-        "animation": "halftone-pan 20s linear infinite"
-      }} />
-      <style>{`
-        @keyframes halftone-pan {
-          0% { background-position: 0px 0px; }
-          100% { background-position: 20px 20px; }
-        }
-      `}</style>
+
 
 
 
