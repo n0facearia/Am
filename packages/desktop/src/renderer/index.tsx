@@ -380,9 +380,17 @@ function DesktopRoot(props: { windowState: DesktopWindowState }) {
 
   function App() {
     const wslServers = useWslServers()
-    const ready = createMemo(
-      () => !defaultServer.loading && !sidecar.loading && !windowCount.loading && !locale.loading,
-    )
+    const [startupGateTimedOut, setStartupGateTimedOut] = createSignal(false)
+    onMount(() => {
+      const timer = setTimeout(() => {
+        if (!ready()) {
+          console.warn("[startup] startup gate timed out after 5s, releasing splash screen")
+          setStartupGateTimedOut(true)
+        }
+      }, 5000)
+      onCleanup(() => clearTimeout(timer))
+    })
+    const isReady = createMemo(() => ready() || startupGateTimedOut())
     const servers = createMemo(() => {
       const data = initializationData(sidecar)
       const list: ServerConnection.Any[] = []
@@ -405,7 +413,7 @@ function DesktopRoot(props: { windowState: DesktopWindowState }) {
       ServerConnection.Key.make(availableStartupServer(defaultServer.latest, wslServers.data)),
     )
     return (
-      <Show when={ready()} fallback={<LoadingSplash />}>
+      <Show when={isReady()} fallback={<LoadingSplash />}>
         <Show when={effectiveDefaultServer()} keyed>
           {(key) => (
             <AppInterface

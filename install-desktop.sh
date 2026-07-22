@@ -28,25 +28,20 @@ install_appimage() {
   curl -fL --progress-bar -o "$dest" "$url"
   chmod +x "$dest"
 
-  # Desktop entry
+  # Desktop entry & official icon
   local apps_dir="${HOME}/.local/share/applications"
   local icon_dir="${HOME}/.local/share/icons/hicolor/256x256/apps"
   mkdir -p "$icon_dir" "$apps_dir"
 
-  # Generate a simple icon
-  cat > "${icon_dir}/am-desktop.svg" << 'ICONEOF'
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
-  <rect width="256" height="256" rx="40" fill="#a78bfa"/>
-  <text x="128" y="168" font-family="system-ui, sans-serif" font-size="120" font-weight="bold" fill="white" text-anchor="middle">AM</text>
-</svg>
-ICONEOF
+  local icon_dest="${icon_dir}/am-desktop.png"
+  curl -fsSL -o "$icon_dest" "https://raw.githubusercontent.com/${REPO}/dev/packages/desktop/icons/prod/icon.png" 2>/dev/null || true
 
   cat > "${apps_dir}/am-desktop.desktop" << DESKTOPFILE
 [Desktop Entry]
 Name=AM Desktop
 Comment=AI-powered coding assistant
 Exec=${dest}
-Icon=${icon_dir}/am-desktop.svg
+Icon=${icon_dest}
 Terminal=false
 Type=Application
 Categories=Development;
