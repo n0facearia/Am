@@ -23,22 +23,42 @@ AM is a fork of [OpenCode](https://github.com/anthropics/opencode) with its own 
 
 ### Key Differences from OpenCode
 
-1. **Isolated Ecosystem & Paths**: AM runs completely isolated from OpenCode using its own configuration (`~/.config/am`), data (`~/.local/share/am`), cache (`~/.cache/am`), and state (`~/.local/state/am`) directories.
-2. **One-Command Installation & Public Pipelines**: Built-in standalone release installers (`install.sh`, `install-desktop.sh`, `install.ps1`) for Linux, macOS, and Windows with independent release binaries (`am-cli`, `am-desktop`).
-3. **Default Layout & Agent Enhancements**: The desktop app and TUI launch with modern, refreshed UI layouts enabled by default (`newLayoutDesignsDefault = true`) along with streamlined agent context configurations.
-4. **Read-Only Session Interoperability**: Historical OpenCode sessions are indexed and displayed in the session drawer for reference without modifying or mutating existing OpenCode databases.
-5. **`dev` Branch as Primary Target**: Development takes place on the `dev` branch instead of `main`.
+1. **Isolated Data & Namespace**: AM operates in full isolation from OpenCode using its own dedicated storage and configuration paths:
+   - Data & Databases: `~/.local/share/am/` (`am.db`, `am-{channel}.db`)
+   - Configuration: `~/.config/am/` (`tui.json`, `config.json`)
+   - State & Cache: `~/.local/state/am/`, `~/.cache/am/`
+2. **Standalone Installation & Distribution**: Custom one-line release installers (`install.sh`, `install-desktop.sh`, `install.ps1`) publish standalone binaries (`am-cli`, `am-desktop`) for Linux, macOS, and Windows with progress bars and desktop integration.
+3. **Structured Agent System**: AM provides pre-configured, permission-scoped primary agents and subagents tailored for structured multi-agent workflows:
+   - **Primary Agents** (User-selectable in TUI / Desktop):
+     - `build` — Default agent with full read/write/execution permissions.
+     - `plan` — Read-only architecture planning mode; disallows file edits outside plan documents.
+     - `frontend` — UI & client specialist restricted to frontend packages (`packages/app`, `packages/ui`, `packages/tui`, `packages/web`, etc.).
+     - `backend` — Server & core specialist restricted to backend packages (`packages/server`, `packages/core`, `packages/schema`, etc.).
+     - `documentation` — Documentation specialist for Mdx and Markdown guides.
+     - `orchestrator` — Pure coordinator agent that delegates tasks to `frontend`, `backend`, and `documentation` subagents without directly editing code.
+   - **Subagents & Utilities**:
+     - `general` — General-purpose subagent for parallel background tasks.
+     - `explore` — Fast codebase search and pattern matching subagent.
+     - `compaction`, `title`, `summary` — Internal session context helpers.
+4. **Default New UI Layout**: Both Desktop and Web UI launch with the refreshed layout design system enabled by default (`newLayoutDesignsDefault = true`).
+5. **Read-Only Session Interoperability**: Discovers historical OpenCode sessions from `opencode.db` and lists them under "From OpenCode" in read-only mode without mutating OpenCode databases.
+6. **`dev` Branch as Primary Target**: Active development and pull requests target `origin/dev` rather than `main`.
 
-### Development Workflow & Guidelines
+---
 
-- **Default Branch**: All features, fixes, and PRs should target `dev`. Diffs should be compared against `origin/dev`.
-- **Branch Naming**: Use short branch names of at most three words separated by hyphens (e.g. `session-recovery`, `fix-scroll-state`). Do not use slashes or type prefixes like `feat/` or `fix/`.
-- **Commits & PR Titles**: Use Conventional Commit messages (`type(scope): summary`), such as `feat(app): ...`, `fix(tui): ...`, `chore(sdk): ...`.
-- **Package-Scoped Execution**:
-  - Run `bun install` at the workspace root to set up dependencies.
-  - Run typechecks per package directory (e.g. `cd packages/opencode && bun typecheck`).
-  - After modifying public Protocol or Server APIs, run `bun run generate` from `packages/client` (do not edit `src/generated` directly).
-  - To regenerate the legacy JS SDK, run `./packages/sdk/js/script/build.ts`.
+## Development & Contribution Guidelines
+
+### Branch Naming
+Use short branch names of at most three words, separated by hyphens (e.g. `session-recovery`, `fix-scroll-state`). Do **not** use slashes or type prefixes such as `feat/` or `fix/`.
+
+### Commits & PR Titles
+Follow Conventional Commits: `type(scope): summary` (e.g. `fix(tui): simplify thinking toggle styling`, `feat(app): enable new layout by default`). Valid types: `feat`, `fix`, `docs`, `chore`, `refactor`, `test`.
+
+### Package Scoped Commands
+- **Install**: Run `bun install` from the repository root.
+- **Typechecking**: Always run `bun typecheck` from individual package directories (e.g., `packages/opencode`), never `tsc` directly or from the root.
+- **Protocol & API Codegen**: After modifying public Protocol or Server `HttpApi`, run `bun run generate` from `packages/client`. Do not edit `src/generated` directly.
+- **SDK Regeneration**: To rebuild the legacy JavaScript SDK, run `./packages/sdk/js/script/build.ts`.
 
 ---
 
