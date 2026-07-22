@@ -85,7 +85,7 @@ trap cleanup EXIT
 
 # Download with progress
 if command -v curl &>/dev/null; then
-  curl -fsSL --progress-bar -o "${TMP_DIR}/${ASSET}" "$DOWNLOAD_URL"
+  curl -fL --progress-bar -o "${TMP_DIR}/${ASSET}" "$DOWNLOAD_URL"
 elif command -v wget &>/dev/null; then
   wget -q --show-progress -O "${TMP_DIR}/${ASSET}" "$DOWNLOAD_URL"
 else
