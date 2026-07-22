@@ -136,6 +136,7 @@ function getConfig() {
         ...base,
         appId,
         productName: `${brand.productName} Dev`,
+        publish: { provider: "github", owner: "n0facearia", repo: "Am", channel: "latest" },
         rpm: { packageName: "am-dev" },
       }
     }
@@ -145,7 +146,7 @@ function getConfig() {
         appId,
         productName: `${brand.productName} Beta`,
         protocols: { name: `${brand.productName} Beta`, schemes: ["am"] },
-        publish: { provider: "github", owner: "anomalyco", repo: "am-beta", channel: "latest" },
+        publish: { provider: "github", owner: "n0facearia", repo: "Am", channel: "latest" },
         rpm: { packageName: "am-beta" },
       }
     }
@@ -155,7 +156,7 @@ function getConfig() {
         appId,
         productName: brand.productName,
         protocols: { name: brand.productName, schemes: ["am"] },
-        publish: { provider: "github", owner: "anomalyco", repo: "am", channel: "latest" },
+        publish: { provider: "github", owner: "n0facearia", repo: "Am", channel: "latest" },
         deb: { fpm: [legacyDesktopEntryFpm, legacyOpenCodeDesktopEntryFpm] },
         rpm: { packageName: "am", fpm: [legacyDesktopEntryFpm, legacyOpenCodeDesktopEntryFpm] },
       }

@@ -35,6 +35,14 @@ export function createUpdaterController(input: {
     return state
   }
 
+  const withTimeout = <T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> => {
+    let timer: ReturnType<typeof setTimeout>
+    const timeout = new Promise<never>((_, reject) => {
+      timer = setTimeout(() => reject(new Error(`${label} timed out after ${timeoutMs}ms`)), timeoutMs)
+    })
+    return Promise.race([promise, timeout]).finally(() => clearTimeout(timer))
+  }
+
   const check = () => {
     if (!input.enabled) return Promise.resolve(state)
     if (state.status === "ready") return Promise.resolve(state)
@@ -42,7 +50,7 @@ export function createUpdaterController(input: {
 
     pending = (async () => {
       transition({ status: "checking" })
-      const result = await input.backend.checkForUpdates()
+      const result = await withTimeout(input.backend.checkForUpdates(), 8000, "Update check")
       const version = result?.updateInfo?.version
       if (!result?.isUpdateAvailable || !version || version === input.currentVersion) {
         await input.persistence.clear()
@@ -50,7 +58,7 @@ export function createUpdaterController(input: {
       }
 
       transition({ status: "downloading", version })
-      await input.backend.downloadUpdate()
+      await withTimeout(input.backend.downloadUpdate(), 30000, "Update download")
       await input.persistence.set({ version })
       return transition({ status: "ready", version })
     })()

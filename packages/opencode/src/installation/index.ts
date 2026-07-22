@@ -61,7 +61,11 @@ export class UpgradeFailedError extends Schema.TaggedErrorClass<UpgradeFailedErr
 }
 
 // Response schemas for external version APIs
-const GitHubRelease = Schema.Struct({ tag_name: Schema.String })
+const GitHubRelease = Schema.Struct({
+  tag_name: Schema.String,
+  draft: Schema.optional(Schema.Boolean),
+  prerelease: Schema.optional(Schema.Boolean),
+})
 const NpmPackage = Schema.Struct({ version: Schema.String })
 const BrewFormula = Schema.Struct({ versions: Schema.Struct({ stable: Schema.String }) })
 const BrewInfoV2 = Schema.Struct({
@@ -123,11 +127,11 @@ const layer: Layer.Layer<Service, never, HttpClient.HttpClient | AppProcess.Serv
     )
 
     const getBrewFormula = Effect.fnUntraced(function* () {
-      const tapFormula = yield* text(["brew", "list", "--formula", "anomalyco/tap/opencode"])
-      if (tapFormula.includes("opencode")) return "anomalyco/tap/opencode"
-      const coreFormula = yield* text(["brew", "list", "--formula", "opencode"])
-      if (coreFormula.includes("opencode")) return "opencode"
-      return "opencode"
+      const tapFormula = yield* text(["brew", "list", "--formula", "n0facearia/tap/am"])
+      if (tapFormula.includes("am")) return "n0facearia/tap/am"
+      const coreFormula = yield* text(["brew", "list", "--formula", "am"])
+      if (coreFormula.includes("am")) return "am"
+      return "am"
     })
 
     const upgradeFailure = (method: Method, result?: { code: number; stdout: string; stderr: string }) => {
@@ -142,24 +146,136 @@ const layer: Layer.Layer<Service, never, HttpClient.HttpClient | AppProcess.Serv
       return "sh"
     })
 
-    const upgradeCurl = Effect.fnUntraced(
-      function* (target: string) {
-        const response = yield* httpOk.execute(HttpClientRequest.get("https://opencode.ai/install"))
-        const body = yield* response.text
-        const bodyBytes = new TextEncoder().encode(body)
-        const shell = yield* upgradeScriptShell()
-        const result = yield* appProcess.run(
-          ChildProcess.make(shell, [], {
-            stdin: Stream.make(bodyBytes),
-            env: { VERSION: target },
-            extendEnv: true,
-          }),
+    const upgradeBinary = Effect.fnUntraced(
+      function* (m: Method, target: string) {
+        const response = yield* httpOk.execute(
+          HttpClientRequest.get("https://api.github.com/repos/n0facearia/Am/releases").pipe(
+            HttpClientRequest.acceptJson,
+          ),
         )
-        return {
-          code: result.exitCode,
-          stdout: result.stdout.toString("utf8"),
-          stderr: result.stderr.toString("utf8"),
+        const responseText = yield* response.text
+        let release: any = null
+        try {
+          const parsed = JSON.parse(responseText)
+          const list = Array.isArray(parsed) ? parsed : [parsed]
+          release =
+            list.find((r: any) => r.tag_name === target || r.tag_name === `v${target}`) ||
+            list.find((r: any) => !r.draft)
+        } catch {
+          // ignore
         }
+
+        if (!release || !Array.isArray(release.assets)) {
+          if (responseText.includes("install") || responseText.includes("#!")) {
+            const bodyBytes = new TextEncoder().encode(responseText)
+            const shell = yield* upgradeScriptShell()
+            const scriptResult = yield* appProcess.run(
+              ChildProcess.make(shell, [], {
+                stdin: Stream.make(bodyBytes),
+                env: { VERSION: target },
+                extendEnv: true,
+              }),
+            )
+            return {
+              code: scriptResult.exitCode,
+              stdout: scriptResult.stdout.toString("utf8"),
+              stderr: scriptResult.stderr.toString("utf8"),
+            }
+          }
+          return { code: 1, stdout: "", stderr: upgradeFailure(m) }
+        }
+
+        const targetOS = process.platform === "win32" ? "windows" : process.platform === "darwin" ? "darwin" : "linux"
+        const targetArch = process.arch === "arm64" ? "arm64" : "x64"
+        const targetExt = process.platform === "linux" ? ".tar.gz" : ".zip"
+
+        const asset =
+          release.assets.find(
+            (a: any) =>
+              typeof a.name === "string" &&
+              a.name.startsWith(`am-cli-${targetOS}-${targetArch}`) &&
+              a.name.endsWith(targetExt),
+          ) ||
+          release.assets.find(
+            (a: any) => typeof a.name === "string" && a.name.includes(`am-cli`) && a.name.endsWith(targetExt),
+          )
+
+        if (!asset || !asset.browser_download_url) {
+          return { code: 1, stdout: "", stderr: `No matching release asset found for platform ${process.platform} ${process.arch}` }
+        }
+
+        const assetResponse = yield* httpOk.execute(HttpClientRequest.get(asset.browser_download_url))
+        const bodyBytes = yield* assetResponse.arrayBuffer
+
+        const fs = yield* Effect.promise(() => import("fs/promises"))
+        const tmp = yield* Effect.promise(() => import("os")).pipe(Effect.map((os) => os.tmpdir()))
+        const tmpDir = path.join(tmp, `am-update-${Date.now()}`)
+        yield* Effect.promise(() => fs.mkdir(tmpDir, { recursive: true }))
+
+        const archivePath = path.join(tmpDir, asset.name)
+        yield* Effect.promise(() => fs.writeFile(archivePath, Buffer.from(bodyBytes)))
+
+        let extractResult: { code: number; stdout: string; stderr: string }
+        if (asset.name.endsWith(".tar.gz")) {
+          extractResult = yield* run(["tar", "-xzf", archivePath, "-C", tmpDir])
+        } else {
+          if (process.platform === "win32") {
+            extractResult = yield* run([
+              "powershell",
+              "-Command",
+              `Expand-Archive -Path '${archivePath}' -DestinationPath '${tmpDir}' -Force`,
+            ])
+          } else {
+            extractResult = yield* run(["unzip", "-o", archivePath, "-d", tmpDir])
+          }
+        }
+
+        if (extractResult.code !== 0) {
+          yield* Effect.promise(() => fs.rm(tmpDir, { recursive: true, force: true }).catch(() => {}))
+          return extractResult
+        }
+
+        const exeName = process.platform === "win32" ? "am.exe" : "am"
+        const findFile = async (dir: string): Promise<string | null> => {
+          const entries = await fs.readdir(dir, { withFileTypes: true })
+          for (const entry of entries) {
+            const fullPath = path.join(dir, entry.name)
+            if (entry.isFile() && entry.name === exeName) return fullPath
+            if (entry.isDirectory()) {
+              const res = await findFile(fullPath)
+              if (res) return res
+            }
+          }
+          return null
+        }
+
+        const foundExe = yield* Effect.promise(() => findFile(tmpDir))
+
+        if (!foundExe) {
+          yield* Effect.promise(() => fs.rm(tmpDir, { recursive: true, force: true }).catch(() => {}))
+          return { code: 1, stdout: "", stderr: `Extracted archive did not contain ${exeName}` }
+        }
+
+        const destPath = process.execPath
+        const tmpDestPath = `${destPath}.tmp-${Date.now()}`
+
+        try {
+          yield* Effect.promise(async () => {
+            await fs.copyFile(foundExe, tmpDestPath)
+            if (process.platform !== "win32") {
+              await fs.chmod(tmpDestPath, 0o755)
+            }
+            await fs.rename(tmpDestPath, destPath)
+          })
+        } catch (e) {
+          yield* Effect.promise(() => fs.rm(tmpDestPath, { force: true }).catch(() => {}))
+          yield* Effect.promise(() => fs.rm(tmpDir, { recursive: true, force: true }).catch(() => {}))
+          return { code: 1, stdout: "", stderr: `Failed to replace binary at ${destPath}: ${errorMessage(e)}` }
+        }
+
+        yield* Effect.promise(() => fs.rm(tmpDir, { recursive: true, force: true }).catch(() => {}))
+
+        return { code: 0, stdout: "Successfully updated AM binary", stderr: "" }
       },
       Effect.mapError(() => new UpgradeFailedError({ stderr: upgradeFailure("curl") })),
     )
@@ -173,6 +289,7 @@ const layer: Layer.Layer<Service, never, HttpClient.HttpClient | AppProcess.Serv
       }),
       method: Effect.fn("Installation.method")(function* () {
         if (process.execPath.includes(path.join(".opencode", "bin"))) return "curl" as Method
+        if (process.execPath.includes(path.join(".am", "bin"))) return "curl" as Method
         if (process.execPath.includes(path.join(".local", "bin"))) return "curl" as Method
         const exec = process.execPath.toLowerCase()
 
@@ -181,9 +298,9 @@ const layer: Layer.Layer<Service, never, HttpClient.HttpClient | AppProcess.Serv
           { name: "yarn", command: () => text(["yarn", "global", "list"]) },
           { name: "pnpm", command: () => text(["pnpm", "list", "-g", "--depth=0"]) },
           { name: "bun", command: () => text(["bun", "pm", "ls", "-g"]) },
-          { name: "brew", command: () => text(["brew", "list", "--formula", "opencode"]) },
-          { name: "scoop", command: () => text(["scoop", "list", "opencode"]) },
-          { name: "choco", command: () => text(["choco", "list", "--limit-output", "opencode"]) },
+          { name: "brew", command: () => text(["brew", "list", "--formula", "am"]) },
+          { name: "scoop", command: () => text(["scoop", "list", "am"]) },
+          { name: "choco", command: () => text(["choco", "list", "--limit-output", "am"]) },
         ]
 
         checks.sort((a, b) => {
@@ -196,8 +313,7 @@ const layer: Layer.Layer<Service, never, HttpClient.HttpClient | AppProcess.Serv
 
         for (const check of checks) {
           const output = yield* check.command()
-          const installedName =
-            check.name === "brew" || check.name === "choco" || check.name === "scoop" ? "opencode" : "opencode-ai"
+          const installedName = check.name === "brew" || check.name === "choco" || check.name === "scoop" ? "am" : "am"
           if (output.includes(installedName)) {
             return check.name
           }
@@ -212,101 +328,69 @@ const layer: Layer.Layer<Service, never, HttpClient.HttpClient | AppProcess.Serv
           const formula = yield* getBrewFormula()
           if (formula.includes("/")) {
             const infoJson = yield* text(["brew", "info", "--json=v2", formula])
-            const info = yield* Schema.decodeUnknownEffect(Schema.fromJsonString(BrewInfoV2))(infoJson)
-            return info.formulae[0].versions.stable
+            if (infoJson) {
+              try {
+                const parsed = JSON.parse(infoJson)
+                if (parsed?.formulae?.[0]?.versions?.stable) {
+                  return parsed.formulae[0].versions.stable
+                }
+              } catch {
+                // ignore
+              }
+            }
           }
-          const response = yield* httpOk.execute(
-            HttpClientRequest.get("https://formulae.brew.sh/api/formula/opencode.json").pipe(
-              HttpClientRequest.acceptJson,
-            ),
-          )
-          const data = yield* HttpClientResponse.schemaBodyJson(BrewFormula)(response)
-          return data.versions.stable
-        }
-
-        if (detectedMethod === "npm" || detectedMethod === "bun" || detectedMethod === "pnpm") {
-          const response = yield* httpOk.execute(
-            HttpClientRequest.get(
-              `${yield* NpmConfig.registry(process.cwd())}/opencode-ai/${InstallationChannel}`,
-            ).pipe(HttpClientRequest.acceptJson),
-          )
-          const data = yield* HttpClientResponse.schemaBodyJson(NpmPackage)(response)
-          return data.version
-        }
-
-        if (detectedMethod === "choco") {
-          const response = yield* httpOk.execute(
-            HttpClientRequest.get(
-              "https://community.chocolatey.org/api/v2/Packages?$filter=Id%20eq%20%27opencode%27%20and%20IsLatestVersion&$select=Version",
-            ).pipe(HttpClientRequest.setHeaders({ Accept: "application/json;odata=verbose" })),
-          )
-          const data = yield* HttpClientResponse.schemaBodyJson(ChocoPackage)(response)
-          return data.d.results[0].Version
-        }
-
-        if (detectedMethod === "scoop") {
-          const response = yield* httpOk.execute(
-            HttpClientRequest.get(
-              "https://raw.githubusercontent.com/ScoopInstaller/Main/master/bucket/opencode.json",
-            ).pipe(HttpClientRequest.setHeaders({ Accept: "application/json" })),
-          )
-          const data = yield* HttpClientResponse.schemaBodyJson(ScoopManifest)(response)
-          return data.version
         }
 
         const response = yield* httpOk.execute(
-          HttpClientRequest.get("https://api.github.com/repos/anomalyco/opencode/releases/latest").pipe(
+          HttpClientRequest.get("https://api.github.com/repos/n0facearia/Am/releases").pipe(
             HttpClientRequest.acceptJson,
           ),
         )
-        const data = yield* HttpClientResponse.schemaBodyJson(GitHubRelease)(response)
-        return data.tag_name.replace(/^v/, "")
+        const responseText = yield* response.text
+
+        if (responseText) {
+          try {
+            const parsed = JSON.parse(responseText)
+            if (parsed?.versions?.stable) {
+              return parsed.versions.stable
+            }
+            const list = Array.isArray(parsed) ? parsed : [parsed]
+            const latestRelease = list.find((r: any) => !r.draft && r.tag_name)
+            if (latestRelease && typeof latestRelease.tag_name === "string") {
+              return latestRelease.tag_name.replace(/^v/, "")
+            }
+          } catch {
+            // ignore
+          }
+        }
+
+        return InstallationVersion
       }, Effect.orDie),
       upgrade: Effect.fn("Installation.upgrade")(function* (m: Method, target: string) {
         let upgradeResult: { code: number; stdout: string; stderr: string } | undefined
         switch (m) {
           case "curl":
-            upgradeResult = yield* upgradeCurl(target)
+          case "unknown":
+            upgradeResult = yield* upgradeBinary(m, target)
             break
           case "npm":
-            upgradeResult = yield* run(["npm", "install", "-g", `opencode-ai@${target}`])
+            upgradeResult = yield* run(["npm", "install", "-g", `am@${target}`])
             break
           case "pnpm":
-            upgradeResult = yield* run(["pnpm", "install", "-g", `opencode-ai@${target}`])
+            upgradeResult = yield* run(["pnpm", "install", "-g", `am@${target}`])
             break
           case "bun":
-            upgradeResult = yield* run(["bun", "install", "-g", `opencode-ai@${target}`])
+            upgradeResult = yield* run(["bun", "install", "-g", `am@${target}`])
             break
           case "brew": {
             const formula = yield* getBrewFormula()
             const env = { HOMEBREW_NO_AUTO_UPDATE: "1" }
-            if (formula.includes("/")) {
-              const tap = yield* run(["brew", "tap", "anomalyco/tap"], { env })
-              if (tap.code !== 0) {
-                upgradeResult = tap
-                break
-              }
-              const repo = yield* text(["brew", "--repo", "anomalyco/tap"])
-              const dir = repo.trim()
-              if (dir) {
-                const pull = yield* run(["git", "pull", "--ff-only"], { cwd: dir, env })
-                if (pull.code !== 0) {
-                  upgradeResult = pull
-                  break
-                }
-              }
-            }
             upgradeResult = yield* run(["brew", "upgrade", formula], { env })
             break
           }
-          case "choco":
-            upgradeResult = yield* run(["choco", "upgrade", "opencode", `--version=${target}`, "-y"])
-            break
-          case "scoop":
-            upgradeResult = yield* run(["scoop", "install", `opencode@${target}`])
-            break
           default:
-            return yield* new UpgradeFailedError({ stderr: `Unknown installation method: ${m}` })
+            upgradeResult = yield* upgradeBinary(m, target)
+            break
         }
         if (!upgradeResult || upgradeResult.code !== 0) {
           return yield* new UpgradeFailedError({ stderr: upgradeFailure(m, upgradeResult) })
@@ -317,7 +401,6 @@ const layer: Layer.Layer<Service, never, HttpClient.HttpClient | AppProcess.Serv
           stdout: upgradeResult.stdout,
           stderr: upgradeResult.stderr,
         })
-        yield* text([process.execPath, "--version"])
       }),
     }
 

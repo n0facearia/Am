@@ -113,28 +113,29 @@ const allTargets: {
   },
 ]
 
-const targets = singleFlag
+const targetIndexFlag = process.argv.indexOf("--target-index")
+const targetIndex = targetIndexFlag !== -1 ? parseInt(process.argv[targetIndexFlag + 1], 10) : -1
+
+const targets = targetIndex !== -1
+  ? [allTargets[targetIndex]]
+  : singleFlag
   ? allTargets.filter((item) => {
       if (item.os !== process.platform || item.arch !== process.arch) {
         return false
       }
-
-      // When building for the current platform, prefer a single native binary by default.
-      // Baseline binaries require additional Bun artifacts and can be flaky to download.
       if (item.avx2 === false) {
         return baselineFlag
       }
-
-      // also skip abi-specific builds for the same reason
       if (item.abi !== undefined) {
         return false
       }
-
       return true
     })
   : allTargets
 
-await $`rm -rf dist`
+if (targetIndex === -1 && !singleFlag) {
+  await $`rm -rf dist`
+}
 
 const binaries: Record<string, string> = {}
 if (!skipInstall) {

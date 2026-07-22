@@ -72,10 +72,9 @@ await Bun.file(`./dist/${pkg.name}/package.json`).write(
   ),
 )
 
-const tasks = Object.entries(binaries).map(async ([name]) => {
+for (const [name] of Object.entries(binaries)) {
   await publish(`./dist/${name}`, name, binaries[name])
-})
-await Promise.all(tasks)
+}
 await publish(`./dist/${pkg.name}`, `${pkg.name}-ai`, version)
 
 const image = `ghcr.io/${process.env.GH_REPO_OWNER}/am-cli`

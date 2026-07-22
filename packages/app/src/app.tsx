@@ -421,9 +421,19 @@ function ConnectionGate(props: ParentProps<{ disableHealthCheck?: boolean; start
   )
   const [startup] = createResource(async () => {
     if (!props.startup) return true
-    await props.startup.catch((error) => {
-      console.error("[startup] startup gate failed", error)
+    let timer: ReturnType<typeof setTimeout>
+    const timeout = new Promise<void>((resolve) => {
+      timer = setTimeout(() => {
+        console.warn("[startup] startup gate timed out after 5s, releasing splash screen")
+        resolve()
+      }, 5000)
     })
+    await Promise.race([
+      props.startup.catch((error) => {
+        console.error("[startup] startup gate failed", error)
+      }),
+      timeout,
+    ]).finally(() => clearTimeout(timer))
     return true
   })
   const startupChecking = createMemo(
@@ -566,7 +576,14 @@ export function AppInterface(props: {
                   <TabsProvider>
                     <NotificationProvider>
                       <ServerShell>
-                        <Show when={useSettings().general.newLayoutDesigns()} fallback={routerProps.children}>
+                        <Show
+                          when={useSettings().general.newLayoutDesigns()}
+                          fallback={
+                            <LegacyServerLayout serverScoped={props.serverScoped}>
+                              {routerProps.children}
+                            </LegacyServerLayout>
+                          }
+                        >
                           <NewAppLayout serverScoped={props.serverScoped}>{routerProps.children}</NewAppLayout>
                         </Show>
                       </ServerShell>
@@ -590,28 +607,26 @@ function Routes(props: { serverScoped?: JSX.Element }) {
   return (
     <>
       <Route
-        component={(routeProps) => (
-          <LegacyServerLayout serverScoped={props.serverScoped}>{routeProps.children}</LegacyServerLayout>
+        path="/"
+        component={() => (
+          <Show when={settings.general.newLayoutDesigns()} fallback={<LegacyHome />}>
+            <NewHome />
+          </Show>
         )}
-      >
-        <Show when={!settings.general.newLayoutDesigns()}>
-          {
-            <>
-              <Route path="/" component={LegacyHome} />
-              <Route path="/server/:serverKey/session/:id" component={LegacyTargetSessionRoute} />
-            </>
-          }
-        </Show>
-        <Route path="/:dir" component={DirectoryLayout}>
-          <Route path="/" component={() => <Navigate href="session" />} />
-          <Route path="/session/:id?" component={SessionRoute} />
-        </Route>
+      />
+      <Route path="/:dir" component={DirectoryLayout}>
+        <Route path="/" component={() => <Navigate href="session" />} />
+        <Route path="/session/:id?" component={SessionRoute} />
       </Route>
-      <Show when={settings.general.newLayoutDesigns()}>
-        <Route path="/" component={NewHome} />
-        <Route path="/:dir/session/:id" component={NewLayoutLegacySessionRedirect} />
-        <Route path="/server/:serverKey/session/:id" component={TargetSessionRoute} />
-      </Show>
+      <Route path="/:dir/session/:id" component={NewLayoutLegacySessionRedirect} />
+      <Route
+        path="/server/:serverKey/session/:id"
+        component={() => (
+          <Show when={settings.general.newLayoutDesigns()} fallback={<LegacyTargetSessionRoute />}>
+            <TargetSessionRoute />
+          </Show>
+        )}
+      />
       <Route path="/new-session" component={DraftRoute} />
     </>
   )
