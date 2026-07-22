@@ -25,7 +25,7 @@ install_appimage() {
 
   local url="https://github.com/${REPO}/releases/download/${VERSION}/am-desktop-linux-x86_64.AppImage"
   echo "Downloading AM Desktop AppImage..."
-  curl -fsSL --progress-bar -o "$dest" "$url"
+  curl -fL --progress-bar -o "$dest" "$url"
   chmod +x "$dest"
 
   # Desktop entry
@@ -66,7 +66,7 @@ install_deb() {
   local tmp_deb="/tmp/am-desktop.deb"
 
   echo "Downloading AM Desktop .deb package..."
-  curl -fsSL --progress-bar -o "$tmp_deb" "$url"
+  curl -fL --progress-bar -o "$tmp_deb" "$url"
 
   echo "Installing via dpkg..."
   if ! sudo dpkg -i "$tmp_deb" 2>/dev/null; then
