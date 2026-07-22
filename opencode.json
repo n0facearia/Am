@@ -248,7 +248,6 @@
         "skill": {
           "*": "deny",
           "backend-*": "allow",
-          "devops-*": "allow",
           "global-*": "allow",
           "customize-opencode": "allow"
         }
@@ -316,8 +315,7 @@
       ".opencode/agents-context/global",
       ".opencode/agents-context/frontend",
       ".opencode/agents-context/backend",
-      ".opencode/agents-context/documentation",
-      ".opencode/agents-context/devops"
+      ".opencode/agents-context/documentation"
     ]
   }
 }
