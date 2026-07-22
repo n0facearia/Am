@@ -90,6 +90,15 @@ function iconPath() {
   return join(iconsDir(), `icon.${ext}`)
 }
 
+function getWindowIcon() {
+  const p = iconPath()
+  if (process.platform === "linux") {
+    const img = nativeImage.createFromPath(p)
+    return img.isEmpty() ? p : img
+  }
+  return p
+}
+
 function tone() {
   return nativeTheme.shouldUseDarkColors ? "dark" : "light"
 }
@@ -177,7 +186,7 @@ export function createMainWindow(id: string = randomUUID()) {
     show: false,
     autoHideMenuBar: true,
     title: "AM",
-    icon: iconPath(),
+    icon: getWindowIcon(),
     backgroundColor: backgroundColor ?? defaultBackgroundColor(),
     ...(process.platform === "darwin"
       ? {

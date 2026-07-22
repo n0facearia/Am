@@ -380,6 +380,9 @@ function DesktopRoot(props: { windowState: DesktopWindowState }) {
 
   function App() {
     const wslServers = useWslServers()
+    const ready = createMemo(
+      () => !defaultServer.loading && !sidecar.loading && !windowCount.loading && !locale.loading,
+    )
     const [startupGateTimedOut, setStartupGateTimedOut] = createSignal(false)
     onMount(() => {
       const timer = setTimeout(() => {
