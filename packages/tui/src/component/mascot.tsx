@@ -10,19 +10,19 @@ export function Mascot(props: { state: MascotState }) {
 
   const states = {
     idle: {
-      art: ` /\\_\\/\n( o.o )\n > ^ <`,
+      art: `∩█     ∩█░\n█▀▀▀▀▀▀▀█░\n█ ▌   ▌ █░\n█   º   █░\n█▄▄▄▄▄▄▄█░\n  █████░ ██░\n  █████░ █░ \n  ████████░`,
       color: accent,
     },
     thinking: {
-      art: ` /\\_\\/\n( -.- )\n > w <`,
+      art: `∩█     ∩█░\n█▀▀▀▀▀▀▀█░\n█ ▀   ▀ █░\n█   º   █░\n█▄▄▄▄▄▄▄█░\n  █████░ ██░\n  █████░ █░ \n  ████████░`,
       color: accent,
     },
     success: {
-      art: ` /\\_\\/\n( ^.^ )\n > v <`,
+      art: `∩█     ∩█░\n█▀▀▀▀▀▀▀█░\n█ ^   ^ █░\n█   v   █░\n█▄▄▄▄▄▄▄█░\n  █████░ ██░\n  █████░ █░ \n  ████████░`,
       color: theme.success,
     },
     error: {
-      art: ` /\\_\\/\n( >.< )\n > u <`,
+      art: `∩█     ∩█░\n█▀▀▀▀▀▀▀█░\n█ >   < █░\n█   u   █░\n█▄▄▄▄▄▄▄█░\n  █████░ ██░\n  █████░ █░ \n  ████████░`,
       color: theme.error,
     },
   }
