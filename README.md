@@ -19,6 +19,29 @@ AM is a fork of [OpenCode](https://github.com/anthropics/opencode) with its own 
 
 ---
 
+## Working with this Fork
+
+### Key Differences from OpenCode
+
+1. **Isolated Ecosystem & Paths**: AM runs completely isolated from OpenCode using its own configuration (`~/.config/am`), data (`~/.local/share/am`), cache (`~/.cache/am`), and state (`~/.local/state/am`) directories.
+2. **One-Command Installation & Public Pipelines**: Built-in standalone release installers (`install.sh`, `install-desktop.sh`, `install.ps1`) for Linux, macOS, and Windows with independent release binaries (`am-cli`, `am-desktop`).
+3. **Default Layout & Agent Enhancements**: The desktop app and TUI launch with modern, refreshed UI layouts enabled by default (`newLayoutDesignsDefault = true`) along with streamlined agent context configurations.
+4. **Read-Only Session Interoperability**: Historical OpenCode sessions are indexed and displayed in the session drawer for reference without modifying or mutating existing OpenCode databases.
+5. **`dev` Branch as Primary Target**: Development takes place on the `dev` branch instead of `main`.
+
+### Development Workflow & Guidelines
+
+- **Default Branch**: All features, fixes, and PRs should target `dev`. Diffs should be compared against `origin/dev`.
+- **Branch Naming**: Use short branch names of at most three words separated by hyphens (e.g. `session-recovery`, `fix-scroll-state`). Do not use slashes or type prefixes like `feat/` or `fix/`.
+- **Commits & PR Titles**: Use Conventional Commit messages (`type(scope): summary`), such as `feat(app): ...`, `fix(tui): ...`, `chore(sdk): ...`.
+- **Package-Scoped Execution**:
+  - Run `bun install` at the workspace root to set up dependencies.
+  - Run typechecks per package directory (e.g. `cd packages/opencode && bun typecheck`).
+  - After modifying public Protocol or Server APIs, run `bun run generate` from `packages/client` (do not edit `src/generated` directly).
+  - To regenerate the legacy JS SDK, run `./packages/sdk/js/script/build.ts`.
+
+---
+
 ## Install
 
 AM provides standalone binaries with no runtime dependencies — no Bun, Node, or Python required.
