@@ -3,8 +3,7 @@ import { TextInputV2 } from "@opencode-ai/ui/v2/text-input-v2"
 import { ButtonV2 } from "@opencode-ai/ui/v2/button-v2"
 import { Icon } from "@opencode-ai/ui/icon"
 import { useLanguage } from "@/context/language"
-import { useServer } from "@/context/server"
-import { useSync } from "@/context/sync"
+import { useSyncOptional } from "@/context/sync"
 import { usePlatform } from "@/context/platform"
 import { fetchSettings, updateSettings, type SettingsData } from "@/utils/settings-api"
 import { SettingsListV2 } from "./parts/list"
@@ -17,9 +16,9 @@ const KNOWN_AGENTS = ["build", "plan", "chat", "general", "explore", "frontend",
 export const SettingsContextV2: Component = () => {
   const language = useLanguage()
   const server = useServer()
-  const sync = useSync()
+  const sync = useSyncOptional()
   const platform = usePlatform()
-  const directory = () => sync().data.path.directory ?? ""
+  const directory = () => sync()?.data.path.directory ?? ""
 
   const [settings, { mutate }] = createResource(
     () => ({ server: server.current?.http, directory: directory() }),
