@@ -63,8 +63,8 @@ if [ "$OS" = "linux" ]; then
 else
   # macOS — all Intel Macs support AVX2 (Haswell 2013+), but offer baseline for Rosetta edge cases
   # Just use the standard build for macOS
-  ASSET="am-cli-${OS}-${ARCH}.zip"
-  EXTRACT_CMD="unzip -q"
+  ASSET="am-cli-${OS}-${ARCH}.tar.gz"
+  EXTRACT_CMD="tar -xzf"
 fi
 
 DOWNLOAD_URL="https://github.com/${REPO}/releases/download/${VERSION}/${ASSET}"
@@ -94,11 +94,7 @@ else
 fi
 
 echo "Extracting..."
-if [ "$OS" = "linux" ]; then
-  tar -xzf "${TMP_DIR}/${ASSET}" -C "$TMP_DIR"
-else
-  unzip -q "${TMP_DIR}/${ASSET}" -d "$TMP_DIR"
-fi
+tar -xzf "${TMP_DIR}/${ASSET}" -C "$TMP_DIR"
 
 # The archive contains the binary at the root
 BINARY_SRC="${TMP_DIR}/am-cli"
