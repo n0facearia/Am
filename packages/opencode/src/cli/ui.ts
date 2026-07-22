@@ -133,4 +133,41 @@ export function markdown(text: string): string {
   return text
 }
 
+export class ProgressBar {
+  private timer?: ReturnType<typeof setInterval>
+  private frame = 0
+  private width = 20
+
+  constructor(private label: string) {}
+
+  start() {
+    if (!process.stderr.isTTY) return
+    this.timer = setInterval(() => {
+      this.frame = (this.frame + 1) % (this.width * 2 + 1)
+      const fillLen = Math.abs(this.frame - this.width)
+      const filled = "█".repeat(this.width - fillLen)
+      const empty = "░".repeat(fillLen)
+      process.stderr.write(`\r${Style.TEXT_HIGHLIGHT}[${filled}${empty}]${Style.TEXT_NORMAL} ${this.label}\x1b[K`)
+    }, 80)
+  }
+
+  update(label: string) {
+    this.label = label
+  }
+
+  stop() {
+    if (this.timer) {
+      clearInterval(this.timer)
+      this.timer = undefined
+    }
+    if (process.stderr.isTTY) {
+      process.stderr.write("\r\x1b[K")
+    }
+  }
+}
+
+export function progressBar(label: string) {
+  return new ProgressBar(label)
+}
+
 export * as UI from "./ui"

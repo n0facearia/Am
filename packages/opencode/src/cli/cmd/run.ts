@@ -697,6 +697,7 @@ export const RunCommand = effectCmd({
         async function loop(client: OpencodeClient, events: Awaited<ReturnType<typeof sdk.event.subscribe>>) {
           const toggles = new Map<string, boolean>()
           let error: string | undefined
+          let activeProgress: InstanceType<typeof UI.ProgressBar> | undefined
 
           for await (const event of events.stream) {
             if (
@@ -717,6 +718,10 @@ export const RunCommand = effectCmd({
               if (part.sessionID !== sessionID) continue
 
               if (part.type === "tool" && (part.state.status === "completed" || part.state.status === "error")) {
+                if (activeProgress) {
+                  activeProgress.stop()
+                  activeProgress = undefined
+                }
                 if (emit("tool_use", { part })) continue
                 if (part.state.status === "completed") {
                   await tool(part)
@@ -728,13 +733,23 @@ export const RunCommand = effectCmd({
 
               if (
                 part.type === "tool" &&
-                part.tool === "task" &&
                 part.state.status === "running" &&
                 args.format !== "json"
               ) {
-                if (toggles.get(part.id) === true) continue
-                await tool(part)
-                toggles.set(part.id, true)
+                if (toggles.get(part.id) !== true) {
+                  toggles.set(part.id, true)
+                  if (part.tool === "task") {
+                    await tool(part)
+                  } else {
+                    const cmdText =
+                      "input" in part.state && part.state.input && typeof part.state.input === "object" && "command" in part.state.input
+                        ? String(part.state.input.command)
+                        : part.tool
+                    activeProgress?.stop()
+                    activeProgress = UI.progressBar(`Running ${cmdText}...`)
+                    activeProgress.start()
+                  }
+                }
               }
 
               if (part.type === "step-start") {
@@ -790,6 +805,8 @@ export const RunCommand = effectCmd({
               event.properties.sessionID === sessionID &&
               event.properties.status.type === "idle"
             ) {
+              activeProgress?.stop()
+              activeProgress = undefined
               break
             }
 
