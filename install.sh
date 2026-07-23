@@ -9,7 +9,7 @@ set -euo pipefail
 #   macOS (arm64, x64, x64-baseline)
 
 REPO="n0facearia/Am"
-VERSION="v0.1.0"
+VERSION="v1.0.0"
 BINARY_NAME="am-cli"
 
 # ---- Platform detection ----
