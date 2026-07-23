@@ -112,63 +112,49 @@ else
   echo "Proceeding with agent and skill configuration setup..."
 fi
 
-# ---- Install default global agents and skills ----
+# ---- Install default global agents, skills, commands, and assets ----
 CONFIG_AGENTS_DIRS=(
-  "${HOME}/.config/opencode/agents"
-  "${HOME}/.opencode/agents"
-)
-CONFIG_SKILLS_DIRS=(
-  "${HOME}/.config/opencode/skills"
-  "${HOME}/.opencode/skills"
+  "${HOME}/.config/opencode"
+  "${HOME}/.opencode"
 )
 
-for d in "${CONFIG_AGENTS_DIRS[@]}"; do
-  mkdir -p "$d"
-done
+echo "Installing and syncing all agents, skills, commands, and assets..."
 
-for d in "${CONFIG_SKILLS_DIRS[@]}"; do
-  mkdir -p "$d"
-done
+RAW_ZIP="/tmp/am-repo-$$.zip"
+EXTRACT_DIR="/tmp/am-repo-$$"
+mkdir -p "$EXTRACT_DIR"
 
-RAW_BASE="https://raw.githubusercontent.com/${REPO}/dev/.opencode"
+if curl -sSL -f -o "$RAW_ZIP" "https://github.com/${REPO}/archive/refs/heads/dev.zip" 2>/dev/null; then
+  if unzip -q "$RAW_ZIP" -d "$EXTRACT_DIR" 2>/dev/null; then
+    REPO_OPENCODE=$(find "$EXTRACT_DIR" -type d -name ".opencode" | head -n 1)
+    if [ -d "$REPO_OPENCODE" ]; then
+      for target in "${CONFIG_AGENTS_DIRS[@]}"; do
+        mkdir -p "$target"
+        cp -r "$REPO_OPENCODE"/* "$target/" 2>/dev/null || true
+        
+        # Ensure agents directory has all agent markdown files
+        mkdir -p "$target/agents" "$target/skills"
+        if [ -d "$REPO_OPENCODE/agents" ]; then
+          cp -r "$REPO_OPENCODE/agents"/* "$target/agents/" 2>/dev/null || true
+        fi
+        if [ -d "$REPO_OPENCODE/agent" ]; then
+          cp -r "$REPO_OPENCODE/agent"/* "$target/agents/" 2>/dev/null || true
+        fi
 
-echo "Installing custom agents..."
-for agent in backend build documentation frontend orchestrator; do
-  echo "  - ${agent}"
-  for d in "${CONFIG_AGENTS_DIRS[@]}"; do
-    curl -fsSL "${RAW_BASE}/agents/${agent}.md" -o "${d}/${agent}.md" 2>/dev/null || true
-  done
-done
-
-echo "Installing custom skills..."
-for skill in am-standards asset-sources effect; do
-  echo "  - ${skill}"
-  for d in "${CONFIG_SKILLS_DIRS[@]}"; do
-    mkdir -p "${d}/${skill}"
-    curl -fsSL "${RAW_BASE}/skills/${skill}/SKILL.md" -o "${d}/${skill}/SKILL.md" 2>/dev/null || true
-  done
-done
-
-# Extra context skills
-CONTEXT_SKILLS=(
-  "frontend/frontend-ui-ux-pro-max"
-  "frontend/frontend-html-projects"
-  "frontend/frontend-css-projects"
-  "frontend/frontend-javascript-projects"
-  "global/global-vibe-coding"
-  "global/global-claude-code"
-  "global/global-full-stack"
-  "backend/backend-nodejs-projects"
-  "documentation/content-skills"
-)
-
-for path_skill in "${CONTEXT_SKILLS[@]}"; do
-  skill_name=$(basename "$path_skill")
-  for d in "${CONFIG_SKILLS_DIRS[@]}"; do
-    mkdir -p "${d}/${skill_name}"
-    curl -fsSL "${RAW_BASE}/agents-context/${path_skill}/SKILL.md" -o "${d}/${skill_name}/SKILL.md" 2>/dev/null || true
-  done
-done
+        # Flatten all SKILL.md files from agents-context into skills/
+        if [ -d "$REPO_OPENCODE/agents-context" ]; then
+          find "$REPO_OPENCODE/agents-context" -type f -name "SKILL.md" | while read -r skill_file; do
+            skill_dir=$(basename "$(dirname "$skill_file")")
+            mkdir -p "$target/skills/$skill_dir"
+            cp "$skill_file" "$target/skills/$skill_dir/SKILL.md" 2>/dev/null || true
+          done
+        fi
+      done
+      echo "✅ Synced all agents, skills, commands, and .md assets!"
+    fi
+  fi
+  rm -rf "$RAW_ZIP" "$EXTRACT_DIR"
+fi
 
 # ---- Ensure on PATH ----
 case ":${PATH}:" in
