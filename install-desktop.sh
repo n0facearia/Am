@@ -118,9 +118,6 @@ if curl -sSL -f -o "$RAW_ZIP" "https://github.com/${REPO}/archive/refs/heads/dev
         if [ -d "$REPO_OPENCODE/agents" ]; then
           cp -r "$REPO_OPENCODE/agents"/* "$target/agents/" 2>/dev/null || true
         fi
-        if [ -d "$REPO_OPENCODE/agent" ]; then
-          cp -r "$REPO_OPENCODE/agent"/* "$target/agents/" 2>/dev/null || true
-        fi
 
         if [ -d "$REPO_OPENCODE/skills" ]; then
           cp -r "$REPO_OPENCODE/skills"/* "$target/skills/" 2>/dev/null || true

@@ -132,13 +132,10 @@ if curl -sSL -f -o "$RAW_ZIP" "https://github.com/${REPO}/archive/refs/heads/dev
         mkdir -p "$target"
         cp -r "$REPO_OPENCODE"/* "$target/" 2>/dev/null || true
         
-        # Ensure agents directory has all agent markdown files
+        # Ensure agents directory has all agent markdown files (primary & subagents)
         mkdir -p "$target/agents" "$target/skills"
         if [ -d "$REPO_OPENCODE/agents" ]; then
           cp -r "$REPO_OPENCODE/agents"/* "$target/agents/" 2>/dev/null || true
-        fi
-        if [ -d "$REPO_OPENCODE/agent" ]; then
-          cp -r "$REPO_OPENCODE/agent"/* "$target/agents/" 2>/dev/null || true
         fi
 
         # Ensure skills directory has all standalone skills from skills/

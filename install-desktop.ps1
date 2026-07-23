@@ -64,9 +64,6 @@ try {
         if (Test-Path "$($OpencodeFolder.FullName)\agents") {
           Copy-Item -Path "$($OpencodeFolder.FullName)\agents\*" -Destination $AgentsTarget -Recurse -Force -ErrorAction SilentlyContinue
         }
-        if (Test-Path "$($OpencodeFolder.FullName)\agent") {
-          Copy-Item -Path "$($OpencodeFolder.FullName)\agent\*" -Destination $AgentsTarget -Recurse -Force -ErrorAction SilentlyContinue
-        }
       }
       Write-Host "✅ Synced all agents, skills, commands, and assets!" -ForegroundColor Green
     }
