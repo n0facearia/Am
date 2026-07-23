@@ -8,29 +8,26 @@ export function PersonaSwitcher() {
   const local = useLocal()
   const active = createMemo(() => local.agent.current())
 
-  const personas = [
-    { id: "plan", label: "Plan" },
-    { id: "build", label: "Build" },
-    { id: "chat", label: "Chat" },
-  ]
-
   return (
     <box flexDirection="row" gap={1} paddingLeft={1} paddingRight={1} alignItems="center">
-      <For each={personas}>
+      <For each={local.agent.list()}>
         {(p) => {
-          const color = AGENT_ACCENTS[p.id]
+          const color = local.agent.color(p.name)
+          const isSelected = active()?.name === p.name
           return (
             <box
-              onMouseUp={() => local.agent.set(p.id)}
+              onMouseUp={() => local.agent.set(p.name)}
               paddingTop={0.5}
               paddingBottom={0.5}
               paddingLeft={1}
               paddingRight={1}
-               backgroundColor={active()?.name === p.id ? color : "transparent"}
+               backgroundColor={isSelected ? color : "transparent"}
                borderColor={color}
                border={["left", "right", "top", "bottom"]}
             >
-               <text fg={active()?.name === p.id ? FALLBACK_PALETTE.onPrimary : color}>{p.label}</text>
+               <text fg={isSelected ? FALLBACK_PALETTE.onPrimary : color}>
+                 {p.name.charAt(0).toUpperCase() + p.name.slice(1)}
+               </text>
 
             </box>
           )
