@@ -34,25 +34,45 @@ trap cleanup EXIT
 
 # ---- Download Desktop Binary ----
 if [ "$OS" = "darwin" ]; then
-  ASSET="am-desktop-mac-${ARCH}.zip"
-  DOWNLOAD_URL="https://github.com/${REPO}/releases/latest/download/${ASSET}"
-  APP_DIR="${HOME}/Applications"
+  APP_DIR="/Applications"
+  if [ ! -w "/Applications" ]; then
+    APP_DIR="${HOME}/Applications"
+  fi
   mkdir -p "$APP_DIR"
-  
+
   echo "Downloading AM Desktop for macOS (${ARCH})..."
   DOWNLOAD_SUCCESS=false
-  if curl -sSL -f -I "$DOWNLOAD_URL" &>/dev/null || curl -sSL -f -I "https://github.com/${REPO}/releases/download/${VERSION}/${ASSET}" &>/dev/null; then
-    if curl -# -fL -o "${TMP_DIR}/${ASSET}" "$DOWNLOAD_URL" 2>/dev/null || curl -# -fL -o "${TMP_DIR}/${ASSET}" "https://github.com/${REPO}/releases/download/${VERSION}/${ASSET}"; then
-      DOWNLOAD_SUCCESS=true
+
+  CANDIDATE_URLS=(
+    "https://github.com/${REPO}/releases/latest/download/am-desktop-mac-${ARCH}.zip"
+    "https://github.com/${REPO}/releases/latest/download/am-desktop-mac-x64.zip"
+    "https://github.com/${REPO}/releases/download/${VERSION}/am-desktop-mac-${ARCH}.zip"
+    "https://github.com/${REPO}/releases/download/${VERSION}/am-desktop-mac-x64.zip"
+    "https://github.com/${REPO}/releases/download/v0.1.0/am-desktop-mac-x64.zip"
+    "https://github.com/${REPO}/releases/download/v0.1.0/am-desktop-mac-arm64.zip"
+  )
+
+  for url in "${CANDIDATE_URLS[@]}"; do
+    if curl -sSL -f -I "$url" &>/dev/null; then
+      if curl -# -fL -o "${TMP_DIR}/am-mac.zip" "$url"; then
+        DOWNLOAD_SUCCESS=true
+        break
+      fi
     fi
-  fi
+  done
 
   if [ "$DOWNLOAD_SUCCESS" = true ]; then
     echo "Extracting AM Desktop to ${APP_DIR}..."
-    unzip -q -o "${TMP_DIR}/${ASSET}" -d "$APP_DIR" 2>/dev/null || true
-    echo "✅ Installed AM Desktop to ${APP_DIR}/AM Desktop.app"
+    unzip -q -o "${TMP_DIR}/am-mac.zip" -d "$APP_DIR" 2>/dev/null || true
+    if [ -d "${APP_DIR}/AM Desktop.app" ]; then
+      touch "${APP_DIR}/AM Desktop.app" 2>/dev/null || true
+      echo "✅ Installed AM Desktop to ${APP_DIR}/AM Desktop.app"
+    elif [ -d "${APP_DIR}/AM Dev.app" ]; then
+      touch "${APP_DIR}/AM Dev.app" 2>/dev/null || true
+      echo "✅ Installed AM Desktop to ${APP_DIR}/AM Dev.app"
+    fi
   else
-    echo "Notice: Prebuilt desktop release asset (${ASSET}) not found on GitHub Releases."
+    echo "Notice: Prebuilt desktop release asset not found on GitHub Releases."
     echo "Release packages will be available once published to https://github.com/${REPO}/releases."
   fi
 
@@ -86,7 +106,7 @@ else
   else
     APPIMAGE_ASSET="am-desktop-linux-x86_64.AppImage"
     APPIMAGE_URL="https://github.com/${REPO}/releases/download/${VERSION}/${APPIMAGE_ASSET}"
-    DEST="${HOME}/.local/bin/am-desktop"
+    DEST="${HOME}/.local/bin/am-desktop-bin"
     mkdir -p "${HOME}/.local/bin"
     if curl -sSL -f -I "$APPIMAGE_URL" &>/dev/null; then
       echo "Downloading AM Desktop AppImage..."
@@ -99,6 +119,50 @@ else
     fi
   fi
 fi
+
+# ---- Create am-desktop CLI Launcher ----
+BIN_DIR="${HOME}/.local/bin"
+mkdir -p "$BIN_DIR"
+
+cat << 'EOF' > "${BIN_DIR}/am-desktop"
+#!/usr/bin/env bash
+if [ -d "/Applications/AM Desktop.app" ]; then
+  open -a "/Applications/AM Desktop.app" "$@"
+elif [ -d "${HOME}/Applications/AM Desktop.app" ]; then
+  open -a "${HOME}/Applications/AM Desktop.app" "$@"
+elif [ -d "/Applications/AM Dev.app" ]; then
+  open -a "/Applications/AM Dev.app" "$@"
+elif [ -d "${HOME}/Applications/AM Dev.app" ]; then
+  open -a "${HOME}/Applications/AM Dev.app" "$@"
+elif [ -x "${HOME}/.local/bin/am-desktop-bin" ]; then
+  exec "${HOME}/.local/bin/am-desktop-bin" "$@"
+elif command -v am.desktop.dev &>/dev/null; then
+  exec am.desktop.dev "$@"
+else
+  echo "Error: AM Desktop application not found."
+  exit 1
+fi
+EOF
+chmod +x "${BIN_DIR}/am-desktop"
+
+# ---- PATH Setup ----
+case ":${PATH}:" in
+  *:"${BIN_DIR}":*) ;;
+  *)
+    SHELL_PROFILE=""
+    if [ -n "${ZSH_VERSION:-}" ] || [ -f "${HOME}/.zshrc" ]; then
+      SHELL_PROFILE="${HOME}/.zshrc"
+    elif [ -f "${HOME}/.bashrc" ]; then
+      SHELL_PROFILE="${HOME}/.bashrc"
+    fi
+    if [ -n "$SHELL_PROFILE" ]; then
+      if ! grep -q 'export PATH=.*\.local/bin' "$SHELL_PROFILE" 2>/dev/null; then
+        echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$SHELL_PROFILE"
+        echo "Added ${BIN_DIR} to PATH in ${SHELL_PROFILE}"
+      fi
+    fi
+    ;;
+esac
 
 # ---- Sync Agents, Skills, Commands & Assets ----
 CONFIG_AGENTS_DIRS=(
@@ -145,4 +209,5 @@ fi
 
 echo ""
 echo "✅ AM Desktop setup complete!"
+echo "   Terminal command: am-desktop"
 echo "   Agents and skills configured identically in ~/.config/opencode/ & ~/.opencode/"
