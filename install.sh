@@ -141,12 +141,18 @@ if curl -sSL -f -o "$RAW_ZIP" "https://github.com/${REPO}/archive/refs/heads/dev
           cp -r "$REPO_OPENCODE/agent"/* "$target/agents/" 2>/dev/null || true
         fi
 
-        # Flatten all SKILL.md files from agents-context into skills/
+        # Ensure skills directory has all standalone skills from skills/
+        if [ -d "$REPO_OPENCODE/skills" ]; then
+          cp -r "$REPO_OPENCODE/skills"/* "$target/skills/" 2>/dev/null || true
+        fi
+
+        # Copy all skill folders recursively (including references, resources, scripts, and .md files) from agents-context into skills/
         if [ -d "$REPO_OPENCODE/agents-context" ]; then
           find "$REPO_OPENCODE/agents-context" -type f -name "SKILL.md" | while read -r skill_file; do
-            skill_dir=$(basename "$(dirname "$skill_file")")
+            skill_parent=$(dirname "$skill_file")
+            skill_dir=$(basename "$skill_parent")
             mkdir -p "$target/skills/$skill_dir"
-            cp "$skill_file" "$target/skills/$skill_dir/SKILL.md" 2>/dev/null || true
+            cp -r "$skill_parent"/* "$target/skills/$skill_dir/" 2>/dev/null || true
           done
         fi
       done
