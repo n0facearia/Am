@@ -128,11 +128,19 @@ Or download from the [release page](https://github.com/n0facearia/Am/releases/ta
 
 #### macOS
 
-A macOS build exists (`am-desktop-mac-x64.zip`, 361MB) attached to the [release](https://github.com/n0facearia/Am/releases/tag/v0.1.0), but it is **unsigned** — Gatekeeper will block it unless you right-click → Open. No one-line install command is provided because the build hasn't been tested or notarized.
+```bash
+curl -fsSL https://raw.githubusercontent.com/n0facearia/Am/dev/install-desktop.sh | bash
+```
 
-#### Windows
+Downloads and extracts `AM Desktop.app` to your `~/Applications` directory, and syncs all agents, skills, and configuration files.
 
-A Windows build exists (`am-desktop-win-x64.exe`, 120MB) attached to the [release](https://github.com/n0facearia/Am/releases/tag/v0.1.0), but it is **unsigned** — SmartScreen will show a warning. No one-line install command is provided because the build hasn't been tested.
+#### Windows (PowerShell)
+
+```powershell
+irm https://raw.githubusercontent.com/n0facearia/Am/dev/install-desktop.ps1 | iex
+```
+
+Downloads the Windows installer, installs AM Desktop into `%LOCALAPPDATA%\Programs\AM Desktop`, and syncs all agents and skills.
 
 ---
 

@@ -103,7 +103,18 @@ Options:
 - `--channel dev|beta|prod` — set the build channel (default: `prod`)
 - `INSTALL_DIR=/usr/local/bin` — change install location (requires sudo)
 
-### Pre-built Releases
+### One-Line Installers for Desktop App
+
+- **macOS / Linux**:
+  ```bash
+  curl -fsSL https://raw.githubusercontent.com/n0facearia/Am/dev/install-desktop.sh | bash
+  ```
+- **Windows (PowerShell)**:
+  ```powershell
+  irm https://raw.githubusercontent.com/n0facearia/Am/dev/install-desktop.ps1 | iex
+  ```
+
+### Pre-built Releases (Manual Downloads)
 
 #### Linux
 
@@ -121,25 +132,34 @@ Options:
    ```bash
    sudo dpkg -i am-desktop-linux-amd64.deb
    sudo apt-get install -f   # fix any missing dependencies
-   am.desktop.dev            # or find "AM Dev" in your app launcher
+   am-desktop                # or find "AM Desktop" in your app launcher
    ```
 
 ### macOS
 
+One-line installation:
+```bash
+curl -fsSL https://raw.githubusercontent.com/n0facearia/Am/dev/install-desktop.sh | bash
+```
+
+Or manual installation:
 1. Download `am-desktop-mac-x64.zip` from the [Releases](https://github.com/n0facearia/Am/releases) page.
 2. Extract and drag to Applications:
    ```bash
    unzip am-desktop-mac-x64.zip
-   cp -R "AM Dev.app" /Applications/
+   cp -R "AM Desktop.app" /Applications/
    ```
-3. On first launch, macOS may block the app because it's unsigned. Go to **System Settings > Privacy & Security** and click **Open Anyway** next to the blocked message.
-
-> A signed `.dmg` installer is not yet available. Building on a Mac with Apple Developer credentials will produce one in future releases.
 
 ### Windows
 
+One-line installation (PowerShell):
+```powershell
+irm https://raw.githubusercontent.com/n0facearia/Am/dev/install-desktop.ps1 | iex
+```
+
+Or manual installation:
 1. Download `am-desktop-win-x64.exe` from the [Releases](https://github.com/n0facearia/Am/releases) page.
-2. Run the installer and follow the setup wizard. AM will be added to your Start Menu.
+2. Run the installer and follow the setup wizard. AM Desktop will be added to your Start Menu.
 
 ### First Run — Connecting a Provider
 
