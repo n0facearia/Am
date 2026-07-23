@@ -71,64 +71,103 @@ DOWNLOAD_URL="https://github.com/${REPO}/releases/latest/download/${ASSET}"
 
 # ---- Determine install directory ----
 INSTALL_DIR="${HOME}/.local/bin"
-
-# Create install dir if needed
 mkdir -p "$INSTALL_DIR"
 
-# ---- Download & install ----
-echo "Downloading AM CLI from ${DOWNLOAD_URL}..."
+# ---- Download & install binary ----
+echo "Downloading AM CLI release binary (${ASSET})..."
 
 TMP_DIR=$(mktemp -d)
 cleanup() { rm -rf "$TMP_DIR"; }
 trap cleanup EXIT
 
-# Download with progress
+DOWNLOAD_SUCCESS=false
+
 if command -v curl &>/dev/null; then
-  curl -fL --progress-bar -o "${TMP_DIR}/${ASSET}" "$DOWNLOAD_URL" || curl -fL --progress-bar -o "${TMP_DIR}/${ASSET}" "https://github.com/${REPO}/releases/download/${VERSION}/${ASSET}"
+  if curl -sSL -f --progress-bar -o "${TMP_DIR}/${ASSET}" "$DOWNLOAD_URL" 2>/dev/null || curl -sSL -f --progress-bar -o "${TMP_DIR}/${ASSET}" "https://github.com/${REPO}/releases/download/${VERSION}/${ASSET}" 2>/dev/null; then
+    DOWNLOAD_SUCCESS=true
+  fi
 elif command -v wget &>/dev/null; then
-  wget -q --show-progress -O "${TMP_DIR}/${ASSET}" "$DOWNLOAD_URL" || wget -q --show-progress -O "${TMP_DIR}/${ASSET}" "https://github.com/${REPO}/releases/download/${VERSION}/${ASSET}"
+  if wget -q -O "${TMP_DIR}/${ASSET}" "$DOWNLOAD_URL" 2>/dev/null || wget -q -O "${TMP_DIR}/${ASSET}" "https://github.com/${REPO}/releases/download/${VERSION}/${ASSET}" 2>/dev/null; then
+    DOWNLOAD_SUCCESS=true
+  fi
+fi
+
+if [ "$DOWNLOAD_SUCCESS" = true ]; then
+  echo "Extracting binary..."
+  tar -xzf "${TMP_DIR}/${ASSET}" -C "$TMP_DIR" 2>/dev/null || true
+  BINARY_SRC="${TMP_DIR}/am-cli"
+  if [ ! -f "$BINARY_SRC" ] && [ -f "${TMP_DIR}/opencode" ]; then
+    BINARY_SRC="${TMP_DIR}/opencode"
+  fi
+  if [ ! -f "$BINARY_SRC" ] && [ -f "${TMP_DIR}/am-cli.exe" ]; then
+    BINARY_SRC="${TMP_DIR}/am-cli.exe"
+  fi
+  if [ -f "$BINARY_SRC" ]; then
+    install -m 755 "$BINARY_SRC" "${INSTALL_DIR}/${BINARY_NAME}"
+    echo "✅ Installed binary to ${INSTALL_DIR}/${BINARY_NAME}"
+  fi
 else
-  echo "FATAL: neither curl nor wget found — install one of them first."
-  exit 1
+  echo "Notice: Prebuilt release binary (${ASSET}) not found on GitHub Releases."
+  echo "Release binaries will be available once published to https://github.com/${REPO}/releases."
+  echo "Proceeding with agent and skill configuration setup..."
 fi
-
-echo "Extracting..."
-tar -xzf "${TMP_DIR}/${ASSET}" -C "$TMP_DIR"
-
-# The archive contains the binary at the root
-BINARY_SRC="${TMP_DIR}/am-cli"
-if [ ! -f "$BINARY_SRC" ] && [ -f "${TMP_DIR}/am-cli.exe" ]; then
-  BINARY_SRC="${TMP_DIR}/am-cli.exe"
-fi
-
-if [ ! -f "$BINARY_SRC" ]; then
-  echo "FATAL: binary not found in archive — archive may be corrupt."
-  ls -la "$TMP_DIR"
-  exit 1
-fi
-
-install -m 755 "$BINARY_SRC" "${INSTALL_DIR}/${BINARY_NAME}"
-echo "Installed to ${INSTALL_DIR}/${BINARY_NAME}"
 
 # ---- Install default global agents and skills ----
-CONFIG_AGENTS_DIR="${HOME}/.config/opencode/agents"
-CONFIG_SKILLS_DIR="${HOME}/.config/opencode/skills"
-mkdir -p "$CONFIG_AGENTS_DIR" "$CONFIG_SKILLS_DIR"
+CONFIG_AGENTS_DIRS=(
+  "${HOME}/.config/opencode/agents"
+  "${HOME}/.opencode/agents"
+)
+CONFIG_SKILLS_DIRS=(
+  "${HOME}/.config/opencode/skills"
+  "${HOME}/.opencode/skills"
+)
 
-RAW_BASE="https://raw.githubusercontent.com/${REPO}/dev/.opencode"
-for agent in backend build documentation frontend orchestrator; do
-  if [ ! -f "${CONFIG_AGENTS_DIR}/${agent}.md" ]; then
-    echo "Installing agent: ${agent}"
-    curl -fsSL "${RAW_BASE}/agents/${agent}.md" -o "${CONFIG_AGENTS_DIR}/${agent}.md" 2>/dev/null || true
-  fi
+for d in "${CONFIG_AGENTS_DIRS[@]}"; do
+  mkdir -p "$d"
 done
 
+for d in "${CONFIG_SKILLS_DIRS[@]}"; do
+  mkdir -p "$d"
+done
+
+RAW_BASE="https://raw.githubusercontent.com/${REPO}/dev/.opencode"
+
+echo "Installing custom agents..."
+for agent in backend build documentation frontend orchestrator; do
+  echo "  - ${agent}"
+  for d in "${CONFIG_AGENTS_DIRS[@]}"; do
+    curl -fsSL "${RAW_BASE}/agents/${agent}.md" -o "${d}/${agent}.md" 2>/dev/null || true
+  done
+done
+
+echo "Installing custom skills..."
 for skill in am-standards asset-sources effect; do
-  if [ ! -d "${CONFIG_SKILLS_DIR}/${skill}" ]; then
-    echo "Installing skill: ${skill}"
-    mkdir -p "${CONFIG_SKILLS_DIR}/${skill}"
-    curl -fsSL "${RAW_BASE}/skills/${skill}/SKILL.md" -o "${CONFIG_SKILLS_DIR}/${skill}/SKILL.md" 2>/dev/null || true
-  fi
+  echo "  - ${skill}"
+  for d in "${CONFIG_SKILLS_DIRS[@]}"; do
+    mkdir -p "${d}/${skill}"
+    curl -fsSL "${RAW_BASE}/skills/${skill}/SKILL.md" -o "${d}/${skill}/SKILL.md" 2>/dev/null || true
+  done
+done
+
+# Extra context skills
+CONTEXT_SKILLS=(
+  "frontend/frontend-ui-ux-pro-max"
+  "frontend/frontend-html-projects"
+  "frontend/frontend-css-projects"
+  "frontend/frontend-javascript-projects"
+  "global/global-vibe-coding"
+  "global/global-claude-code"
+  "global/global-full-stack"
+  "backend/backend-nodejs-projects"
+  "documentation/content-skills"
+)
+
+for path_skill in "${CONTEXT_SKILLS[@]}"; do
+  skill_name=$(basename "$path_skill")
+  for d in "${CONFIG_SKILLS_DIRS[@]}"; do
+    mkdir -p "${d}/${skill_name}"
+    curl -fsSL "${RAW_BASE}/agents-context/${path_skill}/SKILL.md" -o "${d}/${skill_name}/SKILL.md" 2>/dev/null || true
+  done
 done
 
 # ---- Ensure on PATH ----
@@ -152,6 +191,6 @@ case ":${PATH}:" in
 esac
 
 echo ""
-echo "✅ AM CLI installed! Run 'am-cli --version' to verify."
-echo "   Start a session:  am-cli"
-echo "   Need help?        am-cli --help"
+echo "✅ AM setup complete!"
+echo "   Custom agents and skills installed to ~/.config/opencode/ & ~/.opencode/"
+

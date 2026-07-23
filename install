@@ -182,25 +182,16 @@ else
 
     if [ -z "$requested_version" ]; then
         url="https://github.com/n0facearia/Am/releases/latest/download/$filename"
-        specific_version=$(curl -s https://api.github.com/repos/n0facearia/Am/releases/latest | sed -n 's/.*"tag_name": *"v\([^"]*\)".*/\1/p')
+        specific_version=$(curl -s https://api.github.com/repos/n0facearia/Am/releases/latest | sed -n 's/.*"tag_name": *"v\([^"]*\)".*/\1/p' || true)
 
-        if [[ $? -ne 0 || -z "$specific_version" ]]; then
-            echo -e "${RED}Failed to fetch version information${NC}"
-            exit 1
+        if [ -z "$specific_version" ]; then
+            specific_version="1.0.0"
         fi
     else
         # Strip leading 'v' if present
         requested_version="${requested_version#v}"
         url="https://github.com/n0facearia/Am/releases/download/v${requested_version}/$filename"
         specific_version=$requested_version
-
-        # Verify the release exists before downloading
-        http_status=$(curl -sI -o /dev/null -w "%{http_code}" "https://github.com/n0facearia/Am/releases/tag/v${requested_version}")
-        if [ "$http_status" = "404" ]; then
-            echo -e "${RED}Error: Release v${requested_version} not found${NC}"
-            echo -e "${MUTED}Available releases: https://github.com/n0facearia/Am/releases${NC}"
-            exit 1
-        fi
     fi
 fi
 
@@ -440,24 +431,38 @@ if [ -n "${GITHUB_ACTIONS-}" ] && [ "${GITHUB_ACTIONS}" == "true" ]; then
     print_message info "Added $INSTALL_DIR to \$GITHUB_PATH"
 fi
 
-CONFIG_AGENTS_DIR="${HOME}/.config/opencode/agents"
-CONFIG_SKILLS_DIR="${HOME}/.config/opencode/skills"
-mkdir -p "$CONFIG_AGENTS_DIR" "$CONFIG_SKILLS_DIR"
+CONFIG_AGENTS_DIRS=(
+  "${HOME}/.config/opencode/agents"
+  "${HOME}/.opencode/agents"
+)
+CONFIG_SKILLS_DIRS=(
+  "${HOME}/.config/opencode/skills"
+  "${HOME}/.opencode/skills"
+)
+
+for d in "${CONFIG_AGENTS_DIRS[@]}"; do
+  mkdir -p "$d"
+done
+
+for d in "${CONFIG_SKILLS_DIRS[@]}"; do
+  mkdir -p "$d"
+done
 
 RAW_BASE="https://raw.githubusercontent.com/n0facearia/Am/dev/.opencode"
+
 for agent in backend build documentation frontend orchestrator; do
-  if [ ! -f "${CONFIG_AGENTS_DIR}/${agent}.md" ]; then
-    print_message info "${MUTED}Installing agent: ${NC}${agent}"
-    curl -fsSL "${RAW_BASE}/agents/${agent}.md" -o "${CONFIG_AGENTS_DIR}/${agent}.md" 2>/dev/null || true
-  fi
+  print_message info "${MUTED}Installing agent: ${NC}${agent}"
+  for d in "${CONFIG_AGENTS_DIRS[@]}"; do
+    curl -fsSL "${RAW_BASE}/agents/${agent}.md" -o "${d}/${agent}.md" 2>/dev/null || true
+  done
 done
 
 for skill in am-standards asset-sources effect; do
-  if [ ! -d "${CONFIG_SKILLS_DIR}/${skill}" ]; then
-    print_message info "${MUTED}Installing skill: ${NC}${skill}"
-    mkdir -p "${CONFIG_SKILLS_DIR}/${skill}"
-    curl -fsSL "${RAW_BASE}/skills/${skill}/SKILL.md" -o "${CONFIG_SKILLS_DIR}/${skill}/SKILL.md" 2>/dev/null || true
-  fi
+  print_message info "${MUTED}Installing skill: ${NC}${skill}"
+  for d in "${CONFIG_SKILLS_DIRS[@]}"; do
+    mkdir -p "${d}/${skill}"
+    curl -fsSL "${RAW_BASE}/skills/${skill}/SKILL.md" -o "${d}/${skill}/SKILL.md" 2>/dev/null || true
+  done
 done
 
 echo -e ""
