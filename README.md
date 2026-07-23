@@ -98,41 +98,16 @@ Downloads the Windows binary, places it in `%LOCALAPPDATA%\Programs\AM`, and add
 
 ### Desktop (am-desktop) — Electron app
 
-#### Linux
+One-line installation automatically downloads the desktop app for your OS, registers the terminal command `am-desktop`, and syncs all custom agents, skills, and configuration files.
+
+#### macOS & Linux
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/n0facearia/Am/dev/install-desktop.sh | bash
 ```
 
-On Debian/Ubuntu, installs the `.deb` package via `dpkg`. On other Linux distros (Fedora, Arch, etc.), downloads the AppImage to `~/.local/bin/am-desktop` and creates a desktop entry.
-
-✅ **Tested**: Linux (Arch Linux) — confirmed AppImage download + install via real run.  
-❓ **Untested**: Debian/Ubuntu `.deb` path — script logic is written but not verified in this environment.
-
-#### Direct AppImage download (zero install — just download and run)
-
-You can always download the latest AppImage directly — no script, no setup:
-
-```bash
-# Download
-curl -fsSL -o ~/.local/bin/am-desktop https://github.com/n0facearia/Am/releases/download/v0.1.0/am-desktop-linux-x86_64.AppImage
-
-# Make executable
-chmod +x ~/.local/bin/am-desktop
-
-# Run
-am-desktop
-```
-
-Or download from the [release page](https://github.com/n0facearia/Am/releases/tag/v0.1.0) manually.
-
-#### macOS
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/n0facearia/Am/dev/install-desktop.sh | bash
-```
-
-Downloads and extracts `AM Desktop.app` to your `~/Applications` directory, and syncs all agents, skills, and configuration files.
+- **macOS**: Downloads and extracts `AM Desktop.app` to `/Applications` or `~/Applications`, registers the app bundle with macOS Finder & Spotlight, and creates the `am-desktop` terminal launcher.
+- **Linux**: On Debian/Ubuntu, installs the `.deb` package via `dpkg`. On other Linux distros, downloads the AppImage and creates the `am-desktop` terminal launcher.
 
 #### Windows (PowerShell)
 
@@ -140,7 +115,7 @@ Downloads and extracts `AM Desktop.app` to your `~/Applications` directory, and 
 irm https://raw.githubusercontent.com/n0facearia/Am/dev/install-desktop.ps1 | iex
 ```
 
-Downloads the Windows installer, installs AM Desktop into `%LOCALAPPDATA%\Programs\AM Desktop`, and syncs all agents and skills.
+Downloads the Windows installer, installs AM Desktop into `%LOCALAPPDATA%\Programs\AM Desktop`, and syncs all custom agents, skills, and assets.
 
 ---
 
