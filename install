@@ -442,7 +442,7 @@ RAW_ZIP="/tmp/am-repo-$$.zip"
 EXTRACT_DIR="/tmp/am-repo-$$"
 mkdir -p "$EXTRACT_DIR"
 
-if curl -sSL -f -o "$RAW_ZIP" "https://github.com/n0facearia/Am/archive/refs/heads/dev.zip" 2>/dev/null; then
+if curl -# -fL -o "$RAW_ZIP" "https://github.com/n0facearia/Am/archive/refs/heads/dev.zip" 2>/dev/null; then
   if unzip -q "$RAW_ZIP" -d "$EXTRACT_DIR" 2>/dev/null; then
     REPO_OPENCODE=$(find "$EXTRACT_DIR" -type d -name ".opencode" | head -n 1)
     if [ -d "$REPO_OPENCODE" ]; then

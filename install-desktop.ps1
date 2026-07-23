@@ -40,7 +40,8 @@ $ConfigDirs = @(
   (Join-Path $env:USERPROFILE ".opencode")
 )
 
-Write-Host "Syncing all agents, skills, commands, and assets..." -ForegroundColor Cyan
+$ProgressPreference = 'Continue'
+Write-Host "Downloading and syncing all agents, skills, commands, and assets..." -ForegroundColor Cyan
 
 $ZipUrl = "https://github.com/$Repo/archive/refs/heads/dev.zip"
 $ZipFile = Join-Path $TmpDir "dev.zip"

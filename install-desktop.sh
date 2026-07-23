@@ -41,8 +41,10 @@ if [ "$OS" = "darwin" ]; then
   
   echo "Downloading AM Desktop for macOS (${ARCH})..."
   DOWNLOAD_SUCCESS=false
-  if curl -sSL -f --progress-bar -o "${TMP_DIR}/${ASSET}" "$DOWNLOAD_URL" 2>/dev/null || curl -sSL -f --progress-bar -o "${TMP_DIR}/${ASSET}" "https://github.com/${REPO}/releases/download/${VERSION}/${ASSET}" 2>/dev/null; then
-    DOWNLOAD_SUCCESS=true
+  if curl -sSL -f -I "$DOWNLOAD_URL" &>/dev/null || curl -sSL -f -I "https://github.com/${REPO}/releases/download/${VERSION}/${ASSET}" &>/dev/null; then
+    if curl -# -fL -o "${TMP_DIR}/${ASSET}" "$DOWNLOAD_URL" 2>/dev/null || curl -# -fL -o "${TMP_DIR}/${ASSET}" "https://github.com/${REPO}/releases/download/${VERSION}/${ASSET}"; then
+      DOWNLOAD_SUCCESS=true
+    fi
   fi
 
   if [ "$DOWNLOAD_SUCCESS" = true ]; then
@@ -68,14 +70,16 @@ else
     DEB_ASSET="am-desktop-linux-amd64.deb"
     DEB_URL="https://github.com/${REPO}/releases/download/${VERSION}/${DEB_ASSET}"
     TMP_DEB="${TMP_DIR}/${DEB_ASSET}"
-    echo "Downloading AM Desktop .deb package..."
-    if curl -sSL -f --progress-bar -o "$TMP_DEB" "$DEB_URL" 2>/dev/null; then
-      echo "Installing via dpkg..."
-      if ! sudo dpkg -i "$TMP_DEB" 2>/dev/null; then
-        sudo apt-get install -f -y
-        sudo dpkg -i "$TMP_DEB"
+    if curl -sSL -f -I "$DEB_URL" &>/dev/null; then
+      echo "Downloading AM Desktop .deb package..."
+      if curl -# -fL -o "$TMP_DEB" "$DEB_URL"; then
+        echo "Installing via dpkg..."
+        if ! sudo dpkg -i "$TMP_DEB" 2>/dev/null; then
+          sudo apt-get install -f -y
+          sudo dpkg -i "$TMP_DEB"
+        fi
+        echo "✅ AM Desktop installed via .deb!"
       fi
-      echo "✅ AM Desktop installed via .deb!"
     else
       echo "Notice: Prebuilt .deb package not found on GitHub Releases."
     fi
@@ -84,10 +88,12 @@ else
     APPIMAGE_URL="https://github.com/${REPO}/releases/download/${VERSION}/${APPIMAGE_ASSET}"
     DEST="${HOME}/.local/bin/am-desktop"
     mkdir -p "${HOME}/.local/bin"
-    echo "Downloading AM Desktop AppImage..."
-    if curl -sSL -f --progress-bar -o "$DEST" "$APPIMAGE_URL" 2>/dev/null; then
-      chmod +x "$DEST"
-      echo "✅ AM Desktop installed to ${DEST}"
+    if curl -sSL -f -I "$APPIMAGE_URL" &>/dev/null; then
+      echo "Downloading AM Desktop AppImage..."
+      if curl -# -fL -o "$DEST" "$APPIMAGE_URL"; then
+        chmod +x "$DEST"
+        echo "✅ AM Desktop installed to ${DEST}"
+      fi
     else
       echo "Notice: Prebuilt AppImage not found on GitHub Releases."
     fi
@@ -100,13 +106,13 @@ CONFIG_AGENTS_DIRS=(
   "${HOME}/.opencode"
 )
 
-echo "Syncing all agents, skills, commands, and assets..."
+echo "Downloading and syncing custom agents, skills, commands, and assets..."
 
 RAW_ZIP="${TMP_DIR}/am-repo.zip"
 EXTRACT_DIR="${TMP_DIR}/am-repo"
 mkdir -p "$EXTRACT_DIR"
 
-if curl -sSL -f -o "$RAW_ZIP" "https://github.com/${REPO}/archive/refs/heads/dev.zip" 2>/dev/null; then
+if curl -# -fL -o "$RAW_ZIP" "https://github.com/${REPO}/archive/refs/heads/dev.zip" 2>/dev/null; then
   if unzip -q "$RAW_ZIP" -d "$EXTRACT_DIR" 2>/dev/null; then
     REPO_OPENCODE=$(find "$EXTRACT_DIR" -type d -name ".opencode" | head -n 1)
     if [ -d "$REPO_OPENCODE" ]; then

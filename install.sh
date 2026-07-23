@@ -82,12 +82,14 @@ trap cleanup EXIT
 
 DOWNLOAD_SUCCESS=false
 
-if command -v curl &>/dev/null; then
-  if curl -sSL -f --progress-bar -o "${TMP_DIR}/${ASSET}" "$DOWNLOAD_URL" 2>/dev/null || curl -sSL -f --progress-bar -o "${TMP_DIR}/${ASSET}" "https://github.com/${REPO}/releases/download/${VERSION}/${ASSET}" 2>/dev/null; then
+# Quietly check if binary URL exists
+if curl -sSL -f -I "$DOWNLOAD_URL" &>/dev/null || curl -sSL -f -I "https://github.com/${REPO}/releases/download/${VERSION}/${ASSET}" &>/dev/null; then
+  echo "Downloading binary asset..."
+  if command -v curl &>/dev/null; then
+    curl -# -fL -o "${TMP_DIR}/${ASSET}" "$DOWNLOAD_URL" 2>/dev/null || curl -# -fL -o "${TMP_DIR}/${ASSET}" "https://github.com/${REPO}/releases/download/${VERSION}/${ASSET}"
     DOWNLOAD_SUCCESS=true
-  fi
-elif command -v wget &>/dev/null; then
-  if wget -q -O "${TMP_DIR}/${ASSET}" "$DOWNLOAD_URL" 2>/dev/null || wget -q -O "${TMP_DIR}/${ASSET}" "https://github.com/${REPO}/releases/download/${VERSION}/${ASSET}" 2>/dev/null; then
+  elif command -v wget &>/dev/null; then
+    wget --show-progress -O "${TMP_DIR}/${ASSET}" "$DOWNLOAD_URL" 2>/dev/null || wget --show-progress -O "${TMP_DIR}/${ASSET}" "https://github.com/${REPO}/releases/download/${VERSION}/${ASSET}"
     DOWNLOAD_SUCCESS=true
   fi
 fi
@@ -118,13 +120,13 @@ CONFIG_AGENTS_DIRS=(
   "${HOME}/.opencode"
 )
 
-echo "Installing and syncing all agents, skills, commands, and assets..."
+echo "Downloading and syncing agents, skills, commands, and assets..."
 
 RAW_ZIP="/tmp/am-repo-$$.zip"
 EXTRACT_DIR="/tmp/am-repo-$$"
 mkdir -p "$EXTRACT_DIR"
 
-if curl -sSL -f -o "$RAW_ZIP" "https://github.com/${REPO}/archive/refs/heads/dev.zip" 2>/dev/null; then
+if curl -# -fL -o "$RAW_ZIP" "https://github.com/${REPO}/archive/refs/heads/dev.zip" 2>/dev/null; then
   if unzip -q "$RAW_ZIP" -d "$EXTRACT_DIR" 2>/dev/null; then
     REPO_OPENCODE=$(find "$EXTRACT_DIR" -type d -name ".opencode" | head -n 1)
     if [ -d "$REPO_OPENCODE" ]; then

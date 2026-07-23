@@ -65,14 +65,15 @@ $ConfigDirs = @(
   (Join-Path $env:USERPROFILE ".opencode")
 )
 
-Write-Host "Syncing all agents, skills, commands, and assets..." -ForegroundColor Cyan
+$ProgressPreference = 'Continue'
+Write-Host "Downloading and syncing all agents, skills, commands, and assets..." -ForegroundColor Cyan
 
 $ZipUrl = "https://github.com/$Repo/archive/refs/heads/dev.zip"
 $ZipFile = Join-Path $TmpDir "dev.zip"
 $ExtractPath = Join-Path $TmpDir "extracted"
 
 try {
-  Invoke-WebRequest -Uri $ZipUrl -OutFile $ZipFile -UseBasicParsing -ErrorAction SilentlyContinue
+  Invoke-WebRequest -Uri $ZipUrl -OutFile $ZipFile -UseBasicParsing
   if (Test-Path $ZipFile) {
     Expand-Archive -Path $ZipFile -DestinationPath $ExtractPath -Force -ErrorAction SilentlyContinue
     $OpencodeFolder = Get-ChildItem -Path $ExtractPath -Recurse -Directory -Filter ".opencode" | Select-Object -First 1
