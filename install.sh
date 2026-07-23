@@ -67,7 +67,7 @@ else
   EXTRACT_CMD="tar -xzf"
 fi
 
-DOWNLOAD_URL="https://github.com/${REPO}/releases/download/${VERSION}/${ASSET}"
+DOWNLOAD_URL="https://github.com/${REPO}/releases/latest/download/${ASSET}"
 
 # ---- Determine install directory ----
 INSTALL_DIR="${HOME}/.local/bin"
@@ -76,8 +76,7 @@ INSTALL_DIR="${HOME}/.local/bin"
 mkdir -p "$INSTALL_DIR"
 
 # ---- Download & install ----
-echo "Downloading AM CLI ${VERSION} for ${OS}/${ARCH}${SUFFIX}..."
-echo "  ${DOWNLOAD_URL}"
+echo "Downloading AM CLI from ${DOWNLOAD_URL}..."
 
 TMP_DIR=$(mktemp -d)
 cleanup() { rm -rf "$TMP_DIR"; }
@@ -85,9 +84,9 @@ trap cleanup EXIT
 
 # Download with progress
 if command -v curl &>/dev/null; then
-  curl -fL --progress-bar -o "${TMP_DIR}/${ASSET}" "$DOWNLOAD_URL"
+  curl -fL --progress-bar -o "${TMP_DIR}/${ASSET}" "$DOWNLOAD_URL" || curl -fL --progress-bar -o "${TMP_DIR}/${ASSET}" "https://github.com/${REPO}/releases/download/${VERSION}/${ASSET}"
 elif command -v wget &>/dev/null; then
-  wget -q --show-progress -O "${TMP_DIR}/${ASSET}" "$DOWNLOAD_URL"
+  wget -q --show-progress -O "${TMP_DIR}/${ASSET}" "$DOWNLOAD_URL" || wget -q --show-progress -O "${TMP_DIR}/${ASSET}" "https://github.com/${REPO}/releases/download/${VERSION}/${ASSET}"
 else
   echo "FATAL: neither curl nor wget found — install one of them first."
   exit 1
@@ -110,6 +109,27 @@ fi
 
 install -m 755 "$BINARY_SRC" "${INSTALL_DIR}/${BINARY_NAME}"
 echo "Installed to ${INSTALL_DIR}/${BINARY_NAME}"
+
+# ---- Install default global agents and skills ----
+CONFIG_AGENTS_DIR="${HOME}/.config/opencode/agents"
+CONFIG_SKILLS_DIR="${HOME}/.config/opencode/skills"
+mkdir -p "$CONFIG_AGENTS_DIR" "$CONFIG_SKILLS_DIR"
+
+RAW_BASE="https://raw.githubusercontent.com/${REPO}/dev/.opencode"
+for agent in backend build documentation frontend orchestrator; do
+  if [ ! -f "${CONFIG_AGENTS_DIR}/${agent}.md" ]; then
+    echo "Installing agent: ${agent}"
+    curl -fsSL "${RAW_BASE}/agents/${agent}.md" -o "${CONFIG_AGENTS_DIR}/${agent}.md" 2>/dev/null || true
+  fi
+done
+
+for skill in am-standards asset-sources effect; do
+  if [ ! -d "${CONFIG_SKILLS_DIR}/${skill}" ]; then
+    echo "Installing skill: ${skill}"
+    mkdir -p "${CONFIG_SKILLS_DIR}/${skill}"
+    curl -fsSL "${RAW_BASE}/skills/${skill}/SKILL.md" -o "${CONFIG_SKILLS_DIR}/${skill}/SKILL.md" 2>/dev/null || true
+  fi
+done
 
 # ---- Ensure on PATH ----
 case ":${PATH}:" in

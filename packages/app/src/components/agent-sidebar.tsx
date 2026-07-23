@@ -9,9 +9,22 @@ export function AgentSidebar() {
   const activeAgent = createMemo(() => local?.agent.current()?.name)
 
   const modeAgents = createMemo(() => {
+    const allAgents = local?.agent.list() || []
+    if (allAgents.length === 0) {
+      const mode = currentMode()
+      if (!mode) return []
+      return (MODES[mode as keyof typeof MODES] || []) as unknown as string[]
+    }
+
     const mode = currentMode()
-    if (!mode) return []
-    return MODES[mode as keyof typeof MODES] || []
+    const predefinedForMode = (MODES[mode as keyof typeof MODES] || []) as readonly string[]
+    const allPredefined = Object.values(MODES).flat() as readonly string[]
+
+    const modeSpecific = allAgents.filter((a) => predefinedForMode.includes(a.name)).map((a) => a.name)
+    const customAgents = allAgents.filter((a) => !allPredefined.includes(a.name)).map((a) => a.name)
+
+    const result = [...modeSpecific, ...customAgents]
+    return result.length > 0 ? result : allAgents.map((a) => a.name)
   })
   
   const isSidebarVisible = createMemo(() => currentMode() !== "chat")

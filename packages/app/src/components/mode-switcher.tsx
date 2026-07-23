@@ -34,14 +34,19 @@ export function ModeSwitcher() {
             <button
               onClick={() => {
                 local?.mode.set(m.id)
-                // When entering chat mode, automatically set agent to chat
                 if (m.id === "chat") {
-                  local?.agent.set("chat")
+                  const hasChat = local?.agent.list().some((a) => a.name === "chat")
+                  if (hasChat) {
+                    local?.agent.set("chat")
+                  }
                 } else {
-                  // For other modes, if current agent is not in the mode, select the first agent of that mode
                   const currentAgent = local?.agent.current()?.name
-                  if (!currentAgent || !(MODES[m.id] as readonly string[]).includes(currentAgent)) {
-                    local?.agent.set(MODES[m.id][0])
+                  const validAgents = (MODES[m.id] as readonly string[]) || []
+                  if (!currentAgent || !validAgents.includes(currentAgent)) {
+                    const target = local?.agent.list().find((a) => validAgents.includes(a.name))?.name || validAgents[0]
+                    if (target) {
+                      local?.agent.set(target)
+                    }
                   }
                 }
               }}

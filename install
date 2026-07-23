@@ -440,6 +440,26 @@ if [ -n "${GITHUB_ACTIONS-}" ] && [ "${GITHUB_ACTIONS}" == "true" ]; then
     print_message info "Added $INSTALL_DIR to \$GITHUB_PATH"
 fi
 
+CONFIG_AGENTS_DIR="${HOME}/.config/opencode/agents"
+CONFIG_SKILLS_DIR="${HOME}/.config/opencode/skills"
+mkdir -p "$CONFIG_AGENTS_DIR" "$CONFIG_SKILLS_DIR"
+
+RAW_BASE="https://raw.githubusercontent.com/n0facearia/Am/dev/.opencode"
+for agent in backend build documentation frontend orchestrator; do
+  if [ ! -f "${CONFIG_AGENTS_DIR}/${agent}.md" ]; then
+    print_message info "${MUTED}Installing agent: ${NC}${agent}"
+    curl -fsSL "${RAW_BASE}/agents/${agent}.md" -o "${CONFIG_AGENTS_DIR}/${agent}.md" 2>/dev/null || true
+  fi
+done
+
+for skill in am-standards asset-sources effect; do
+  if [ ! -d "${CONFIG_SKILLS_DIR}/${skill}" ]; then
+    print_message info "${MUTED}Installing skill: ${NC}${skill}"
+    mkdir -p "${CONFIG_SKILLS_DIR}/${skill}"
+    curl -fsSL "${RAW_BASE}/skills/${skill}/SKILL.md" -o "${CONFIG_SKILLS_DIR}/${skill}/SKILL.md" 2>/dev/null || true
+  fi
+done
+
 echo -e ""
 echo -e "  ${ORANGE}▄▀▄  █▄ ▄█${NC}"
 echo -e "  ${ORANGE}█▀█  █ █ █${NC}"
