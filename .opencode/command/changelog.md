@@ -1,5 +1,6 @@
 ---
-model: opencode/gpt-5.4
+description: Generate changelog entries
+subtask: true
 ---
 
 Create `UPCOMING_CHANGELOG.md` from the structured changelog input below.

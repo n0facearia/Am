@@ -1,7 +1,6 @@
 ---
 description: General-purpose conversational assistant for general questions and chat.
 mode: primary
-model: google/gemini-3.5-flash
 color: "#38bdf8"
 ---
 

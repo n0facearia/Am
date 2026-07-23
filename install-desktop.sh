@@ -1,86 +1,140 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# AM Desktop — one-line install script (Linux only)
+# AM Desktop — one-line install script for macOS & Linux
 # Usage: curl -fsSL https://raw.githubusercontent.com/n0facearia/Am/dev/install-desktop.sh | bash
-#
-# Downloads and installs the AM Desktop application on Linux.
-# Uses AppImage (universal) or .deb (Debian/Ubuntu).
 
 REPO="n0facearia/Am"
-VERSION="v0.1.0"
+VERSION="v1.0.0"
 
-# ---- Distro detection ----
-IS_DEBIAN=false
-if [ -f /etc/os-release ]; then
-  . /etc/os-release
-  case "$ID" in
-    debian|ubuntu|linuxmint|pop|elementary|zorin) IS_DEBIAN=true ;;
-  esac
-fi
+OS=""
+ARCH=""
 
-install_appimage() {
-  local dest="${HOME}/.local/bin/am-desktop"
-  mkdir -p "${HOME}/.local/bin"
+case "$(uname -s)" in
+  Linux)  OS="linux" ;;
+  Darwin) OS="darwin" ;;
+  *)
+    echo "FATAL: unsupported OS '$(uname -s)' — AM Desktop only supports macOS and Linux."
+    exit 1
+    ;;
+esac
 
-  local url="https://github.com/${REPO}/releases/download/${VERSION}/am-desktop-linux-x86_64.AppImage"
-  echo "Downloading AM Desktop AppImage..."
-  curl -fL --progress-bar -o "$dest" "$url"
-  chmod +x "$dest"
+case "$(uname -m)" in
+  x86_64|amd64) ARCH="x64" ;;
+  aarch64|arm64) ARCH="arm64" ;;
+  *)
+    echo "FATAL: unsupported architecture '$(uname -m)'"
+    exit 1
+    ;;
+esac
 
-  # Desktop entry & official icon
-  local apps_dir="${HOME}/.local/share/applications"
-  local icon_dir="${HOME}/.local/share/icons/hicolor/256x256/apps"
-  mkdir -p "$icon_dir" "$apps_dir"
+TMP_DIR=$(mktemp -d)
+cleanup() { rm -rf "$TMP_DIR"; }
+trap cleanup EXIT
 
-  local icon_dest="${icon_dir}/am-desktop.png"
-  curl -fsSL -o "$icon_dest" "https://raw.githubusercontent.com/${REPO}/dev/packages/desktop/icons/prod/icon.png" 2>/dev/null || true
-
-  cat > "${apps_dir}/am-desktop.desktop" << DESKTOPFILE
-[Desktop Entry]
-Name=AM Desktop
-Comment=AI-powered coding assistant
-Exec=${dest}
-Icon=${icon_dest}
-Terminal=false
-Type=Application
-Categories=Development;
-StartupWMClass=am.desktop
-DESKTOPFILE
-
-  update-desktop-database "$apps_dir" 2>/dev/null || true
-
-  echo ""
-  echo "✅ AM Desktop installed to ${dest}"
-  echo "   Run with: am-desktop"
-  echo "   Or launch from your application menu."
-}
-
-install_deb() {
-  local url="https://github.com/${REPO}/releases/download/${VERSION}/am-desktop-linux-amd64.deb"
-  local tmp_deb="/tmp/am-desktop.deb"
-
-  echo "Downloading AM Desktop .deb package..."
-  curl -fL --progress-bar -o "$tmp_deb" "$url"
-
-  echo "Installing via dpkg..."
-  if ! sudo dpkg -i "$tmp_deb" 2>/dev/null; then
-    echo "dpkg failed — trying to fix dependencies..."
-    sudo apt-get install -f -y
-    sudo dpkg -i "$tmp_deb"
+# ---- Download Desktop Binary ----
+if [ "$OS" = "darwin" ]; then
+  ASSET="am-desktop-mac-${ARCH}.zip"
+  DOWNLOAD_URL="https://github.com/${REPO}/releases/latest/download/${ASSET}"
+  APP_DIR="${HOME}/Applications"
+  mkdir -p "$APP_DIR"
+  
+  echo "Downloading AM Desktop for macOS (${ARCH})..."
+  DOWNLOAD_SUCCESS=false
+  if curl -sSL -f --progress-bar -o "${TMP_DIR}/${ASSET}" "$DOWNLOAD_URL" 2>/dev/null || curl -sSL -f --progress-bar -o "${TMP_DIR}/${ASSET}" "https://github.com/${REPO}/releases/download/${VERSION}/${ASSET}" 2>/dev/null; then
+    DOWNLOAD_SUCCESS=true
   fi
 
-  rm -f "$tmp_deb"
+  if [ "$DOWNLOAD_SUCCESS" = true ]; then
+    echo "Extracting AM Desktop to ${APP_DIR}..."
+    unzip -q -o "${TMP_DIR}/${ASSET}" -d "$APP_DIR" 2>/dev/null || true
+    echo "✅ Installed AM Desktop to ${APP_DIR}/AM Desktop.app"
+  else
+    echo "Notice: Prebuilt desktop release asset (${ASSET}) not found on GitHub Releases."
+    echo "Release packages will be available once published to https://github.com/${REPO}/releases."
+  fi
 
-  echo ""
-  echo "✅ AM Desktop installed via .deb!"
-  echo "   Run with: am-desktop"
-  echo "   Or launch from your application menu."
-}
-
-# Main: prefer .deb on Debian/Ubuntu, AppImage everywhere else
-if [ "$IS_DEBIAN" = true ] && command -v sudo &>/dev/null; then
-  install_deb
 else
-  install_appimage
+  # Linux
+  IS_DEBIAN=false
+  if [ -f /etc/os-release ]; then
+    . /etc/os-release
+    case "${ID:-}" in
+      debian|ubuntu|linuxmint|pop|elementary|zorin) IS_DEBIAN=true ;;
+    esac
+  fi
+
+  if [ "$IS_DEBIAN" = true ] && command -v sudo &>/dev/null; then
+    DEB_ASSET="am-desktop-linux-amd64.deb"
+    DEB_URL="https://github.com/${REPO}/releases/download/${VERSION}/${DEB_ASSET}"
+    TMP_DEB="${TMP_DIR}/${DEB_ASSET}"
+    echo "Downloading AM Desktop .deb package..."
+    if curl -sSL -f --progress-bar -o "$TMP_DEB" "$DEB_URL" 2>/dev/null; then
+      echo "Installing via dpkg..."
+      if ! sudo dpkg -i "$TMP_DEB" 2>/dev/null; then
+        sudo apt-get install -f -y
+        sudo dpkg -i "$TMP_DEB"
+      fi
+      echo "✅ AM Desktop installed via .deb!"
+    else
+      echo "Notice: Prebuilt .deb package not found on GitHub Releases."
+    fi
+  else
+    APPIMAGE_ASSET="am-desktop-linux-x86_64.AppImage"
+    APPIMAGE_URL="https://github.com/${REPO}/releases/download/${VERSION}/${APPIMAGE_ASSET}"
+    DEST="${HOME}/.local/bin/am-desktop"
+    mkdir -p "${HOME}/.local/bin"
+    echo "Downloading AM Desktop AppImage..."
+    if curl -sSL -f --progress-bar -o "$DEST" "$APPIMAGE_URL" 2>/dev/null; then
+      chmod +x "$DEST"
+      echo "✅ AM Desktop installed to ${DEST}"
+    else
+      echo "Notice: Prebuilt AppImage not found on GitHub Releases."
+    fi
+  fi
 fi
+
+# ---- Sync Agents, Skills, Commands & Assets ----
+CONFIG_AGENTS_DIRS=(
+  "${HOME}/.config/opencode"
+  "${HOME}/.opencode"
+)
+
+echo "Syncing all agents, skills, commands, and assets..."
+
+RAW_ZIP="${TMP_DIR}/am-repo.zip"
+EXTRACT_DIR="${TMP_DIR}/am-repo"
+mkdir -p "$EXTRACT_DIR"
+
+if curl -sSL -f -o "$RAW_ZIP" "https://github.com/${REPO}/archive/refs/heads/dev.zip" 2>/dev/null; then
+  if unzip -q "$RAW_ZIP" -d "$EXTRACT_DIR" 2>/dev/null; then
+    REPO_OPENCODE=$(find "$EXTRACT_DIR" -type d -name ".opencode" | head -n 1)
+    if [ -d "$REPO_OPENCODE" ]; then
+      for target in "${CONFIG_AGENTS_DIRS[@]}"; do
+        mkdir -p "$target"
+        cp -r "$REPO_OPENCODE"/* "$target/" 2>/dev/null || true
+        
+        mkdir -p "$target/agents" "$target/skills"
+        if [ -d "$REPO_OPENCODE/agents" ]; then
+          cp -r "$REPO_OPENCODE/agents"/* "$target/agents/" 2>/dev/null || true
+        fi
+        if [ -d "$REPO_OPENCODE/agent" ]; then
+          cp -r "$REPO_OPENCODE/agent"/* "$target/agents/" 2>/dev/null || true
+        fi
+
+        if [ -d "$REPO_OPENCODE/agents-context" ]; then
+          find "$REPO_OPENCODE/agents-context" -type f -name "SKILL.md" | while read -r skill_file; do
+            skill_dir=$(basename "$(dirname "$skill_file")")
+            mkdir -p "$target/skills/$skill_dir"
+            cp "$skill_file" "$target/skills/$skill_dir/SKILL.md" 2>/dev/null || true
+          done
+        fi
+      done
+      echo "✅ Synced all custom agents, skills, commands, and assets!"
+    fi
+  fi
+fi
+
+echo ""
+echo "✅ AM Desktop setup complete!"
+echo "   Agents and skills configured identically in ~/.config/opencode/ & ~/.opencode/"

@@ -1,7 +1,6 @@
 ---
 description: Build and maintain backend, server, database, and core logic code. Restricted to backend paths.
 mode: primary
-model: google/gemini-3.5-flash
 color: "#34d399"
 permission:
   read:

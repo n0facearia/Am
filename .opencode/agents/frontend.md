@@ -1,7 +1,6 @@
 ---
 description: Build and maintain UI/frontend code. Restricted to frontend paths.
 mode: primary
-model: google/gemini-3.5-flash
 color: "#a78bfa"
 permission:
   read:

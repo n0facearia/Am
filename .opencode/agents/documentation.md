@@ -1,7 +1,6 @@
 ---
 description: Write and maintain project documentation. Read-only for code, write access for .md and project.json.
 mode: primary
-model: google/gemini-3.5-flash
 color: "#fbbf24"
 permission:
   read:
