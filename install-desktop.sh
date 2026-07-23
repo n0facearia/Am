@@ -87,34 +87,55 @@ else
   fi
 
   if [ "$IS_DEBIAN" = true ] && command -v sudo &>/dev/null; then
-    DEB_ASSET="am-desktop-linux-amd64.deb"
-    DEB_URL="https://github.com/${REPO}/releases/download/${VERSION}/${DEB_ASSET}"
-    TMP_DEB="${TMP_DIR}/${DEB_ASSET}"
-    if curl -sSL -f -I "$DEB_URL" &>/dev/null; then
-      echo "Downloading AM Desktop .deb package..."
-      if curl -# -fL -o "$TMP_DEB" "$DEB_URL"; then
-        echo "Installing via dpkg..."
-        if ! sudo dpkg -i "$TMP_DEB" 2>/dev/null; then
-          sudo apt-get install -f -y
-          sudo dpkg -i "$TMP_DEB"
+    DEB_CANDIDATES=(
+      "https://github.com/${REPO}/releases/latest/download/am-desktop-linux-amd64.deb"
+      "https://github.com/${REPO}/releases/download/${VERSION}/am-desktop-linux-amd64.deb"
+      "https://github.com/${REPO}/releases/download/v0.1.0/am-desktop-linux-amd64.deb"
+    )
+    DEB_SUCCESS=false
+    TMP_DEB="${TMP_DIR}/am-desktop.deb"
+    for url in "${DEB_CANDIDATES[@]}"; do
+      if curl -sSL -f -I "$url" &>/dev/null; then
+        echo "Downloading AM Desktop .deb package..."
+        if curl -# -fL -o "$TMP_DEB" "$url"; then
+          DEB_SUCCESS=true
+          break
         fi
-        echo "✅ AM Desktop installed via .deb!"
       fi
+    done
+
+    if [ "$DEB_SUCCESS" = true ]; then
+      echo "Installing via dpkg..."
+      if ! sudo dpkg -i "$TMP_DEB" 2>/dev/null; then
+        sudo apt-get install -f -y
+        sudo dpkg -i "$TMP_DEB"
+      fi
+      echo "✅ AM Desktop installed via .deb!"
     else
       echo "Notice: Prebuilt .deb package not found on GitHub Releases."
     fi
   else
-    APPIMAGE_ASSET="am-desktop-linux-x86_64.AppImage"
-    APPIMAGE_URL="https://github.com/${REPO}/releases/download/${VERSION}/${APPIMAGE_ASSET}"
+    APPIMAGE_CANDIDATES=(
+      "https://github.com/${REPO}/releases/latest/download/am-desktop-linux-x86_64.AppImage"
+      "https://github.com/${REPO}/releases/download/${VERSION}/am-desktop-linux-x86_64.AppImage"
+      "https://github.com/${REPO}/releases/download/v0.1.0/am-desktop-linux-x86_64.AppImage"
+    )
     DEST="${HOME}/.local/bin/am-desktop-bin"
     mkdir -p "${HOME}/.local/bin"
-    if curl -sSL -f -I "$APPIMAGE_URL" &>/dev/null; then
-      echo "Downloading AM Desktop AppImage..."
-      if curl -# -fL -o "$DEST" "$APPIMAGE_URL"; then
-        chmod +x "$DEST"
-        echo "✅ AM Desktop installed to ${DEST}"
+    APPIMAGE_SUCCESS=false
+    for url in "${APPIMAGE_CANDIDATES[@]}"; do
+      if curl -sSL -f -I "$url" &>/dev/null; then
+        echo "Downloading AM Desktop AppImage..."
+        if curl -# -fL -o "$DEST" "$url"; then
+          chmod +x "$DEST"
+          APPIMAGE_SUCCESS=true
+          echo "✅ AM Desktop installed to ${DEST}"
+          break
+        fi
       fi
-    else
+    done
+
+    if [ "$APPIMAGE_SUCCESS" = false ]; then
       echo "Notice: Prebuilt AppImage not found on GitHub Releases."
     fi
   fi
