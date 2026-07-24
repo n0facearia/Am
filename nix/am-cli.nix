@@ -14,7 +14,7 @@
   node_modules ? callPackage ./node-modules.nix { },
 }:
 stdenvNoCC.mkDerivation (finalAttrs: {
-  pname = "opencode";
+  pname = "am-cli";
   inherit (node_modules) version src;
   inherit node_modules;
 
@@ -62,10 +62,10 @@ stdenvNoCC.mkDerivation (finalAttrs: {
   installPhase = ''
     runHook preInstall
 
-    install -Dm755 dist/opencode-*/bin/opencode $out/bin/opencode
+    install -Dm755 dist/am-cli-*/bin/am-cli $out/bin/am-cli
     install -Dm644 schema.json $out/share/opencode/schema.json
 
-    wrapProgram $out/bin/opencode \
+    wrapProgram $out/bin/am-cli \
       --prefix PATH : ${
         lib.makeBinPath (
           [
@@ -81,9 +81,9 @@ stdenvNoCC.mkDerivation (finalAttrs: {
 
   postInstall = lib.optionalString (stdenvNoCC.buildPlatform.canExecute stdenvNoCC.hostPlatform) ''
     # trick yargs into also generating zsh completions
-    installShellCompletion --cmd opencode \
-      --bash <($out/bin/opencode completion) \
-      --zsh <(SHELL=/bin/zsh $out/bin/opencode completion)
+    installShellCompletion --cmd am-cli \
+      --bash <($out/bin/am-cli completion) \
+      --zsh <(SHELL=/bin/zsh $out/bin/am-cli completion)
   '';
 
   nativeInstallCheckInputs = [
@@ -103,7 +103,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     description = "The open source coding agent";
     homepage = "https://opencode.ai";
     license = lib.licenses.mit;
-    mainProgram = "opencode";
+    mainProgram = "am-cli";
     inherit (node_modules.meta) platforms;
   };
 })

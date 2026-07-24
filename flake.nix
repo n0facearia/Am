@@ -1,5 +1,5 @@
 {
-  description = "OpenCode development flake";
+  description = "Am development flake";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
@@ -39,11 +39,11 @@
             };
           in
           rec {
-            opencode = final.callPackage ./nix/opencode.nix {
+            am-cli = final.callPackage ./nix/am-cli.nix {
               inherit node_modules;
             };
-            opencode-desktop = final.callPackage ./nix/desktop.nix {
-              inherit opencode;
+            am-desktop = final.callPackage ./nix/am-desktop.nix {
+              inherit am-cli;
             };
           };
       };
@@ -56,12 +56,12 @@
           };
         in
         rec {
-          default = opencode;
-          opencode = pkgs.callPackage ./nix/opencode.nix {
+          default = am-cli;
+          am-cli = pkgs.callPackage ./nix/am-cli.nix {
             inherit node_modules;
           };
-          opencode-desktop = pkgs.callPackage ./nix/desktop.nix {
-            inherit opencode;
+          am-desktop = pkgs.callPackage ./nix/am-desktop.nix {
+            inherit am-cli;
           };
           # Updater derivation with fakeHash - build fails and reveals correct hash
           node_modules_updater = node_modules.override {
