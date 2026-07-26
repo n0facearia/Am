@@ -121,7 +121,10 @@ CONFIG_AGENTS_DIRS=(
 
 echo "Downloading and syncing agents, skills, commands, and assets..."
 
-SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+SCRIPT_DIR=""
+if [ -n "${BASH_SOURCE[0]:-}" ]; then
+  SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd || echo "")
+fi
 RAW_ZIP="/tmp/am-repo-$$.zip"
 EXTRACT_DIR="/tmp/am-repo-$$"
 mkdir -p "$EXTRACT_DIR"
