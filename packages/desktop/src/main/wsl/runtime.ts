@@ -2,7 +2,6 @@ import { spawn } from "node:child_process"
 import { existsSync, readFileSync } from "node:fs"
 import { join, dirname } from "node:path"
 import { fileURLToPath } from "node:url"
-import * as pty from "@lydell/node-pty"
 import { app } from "electron"
 import type { WslDistroProbe, WslInstalledDistro, WslOnlineDistro, WslRuntimeCheck } from "../../preload/types"
 import { wslTerminalArgs } from "./policy"
@@ -128,6 +127,7 @@ function runCommand(command: string, args: string[], opts: RunWslOptions = {}) {
 }
 
 function runInteractiveCommand(command: string, args: string[], opts: RunWslOptions = {}, defaultTimeoutMs: number) {
+  const pty = require("@lydell/node-pty")
   return new Promise<WslCommandResult>((resolve, reject) => {
     const child = pty.spawn(command, args, {
       name: "xterm-color",

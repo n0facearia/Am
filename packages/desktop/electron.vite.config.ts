@@ -13,18 +13,28 @@ const channel = (() => {
 })()
 
 const targetOS = (() => {
-  const rust = process.env.RUST_TARGET ?? ""
-  if (rust.includes("apple-darwin")) return "darwin"
-  if (rust.includes("linux")) return "linux"
-  if (rust.includes("windows")) return "win32"
-  return process.env.TARGET_PLATFORM || process.env.npm_config_platform || process.platform
+  const raw = (
+    process.env.RUST_TARGET ||
+    process.env.TARGET_PLATFORM ||
+    process.env.npm_config_platform ||
+    process.platform
+  ).toLowerCase()
+  if (raw.includes("apple") || raw.includes("darwin") || raw.includes("mac")) return "darwin"
+  if (raw.includes("win")) return "win32"
+  if (raw.includes("linux")) return "linux"
+  return process.platform
 })()
 
 const targetArch = (() => {
-  const rust = process.env.RUST_TARGET ?? ""
-  if (rust.startsWith("aarch64")) return "arm64"
-  if (rust.startsWith("x86_64")) return "x64"
-  return process.env.TARGET_ARCH || process.env.npm_config_arch || process.arch
+  const raw = (
+    process.env.RUST_TARGET ||
+    process.env.TARGET_ARCH ||
+    process.env.npm_config_arch ||
+    process.arch
+  ).toLowerCase()
+  if (raw.includes("aarch64") || raw.includes("arm64")) return "arm64"
+  if (raw.includes("x86_64") || raw.includes("x64") || raw.includes("amd64")) return "x64"
+  return process.arch
 })()
 
 const nodePtyPkg = `@lydell/node-pty-${targetOS}-${targetArch}`
