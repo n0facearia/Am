@@ -238,6 +238,11 @@ if (Script.release) {
       await $`zip -r ../../${key}.zip *`.cwd(`dist/${key}/bin`)
     }
   }
+  const rootDir = path.resolve(dir, "../..")
+  if (fs.existsSync(path.join(rootDir, ".opencode"))) {
+    await $`tar -czf ./dist/am-assets.tar.gz -C ${rootDir} .opencode`
+    await $`zip -r ${path.resolve(dir, "dist/am-assets.zip")} .opencode`.cwd(rootDir)
+  }
   await $`gh release upload v${Script.version} ./dist/*.zip ./dist/*.tar.gz --clobber --repo ${process.env.GH_REPO}`
 }
 

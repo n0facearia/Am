@@ -55,9 +55,10 @@ export const Plugin = define({
           if (entry.type === "document") return Effect.succeed([entry])
           return Effect.gen(function* () {
             const files = yield* discover(fs, entry.path)
+            const isGlobal = path.resolve(entry.path) === path.resolve(global.config)
             return yield* Effect.forEach(files, (file) =>
               fs.readFileStringSafe(file.filepath).pipe(
-                Effect.map((content) => content && decode(file, content)),
+                Effect.map((content) => content && decode(file, content, isGlobal)),
                 Effect.catch(() => Effect.succeed(undefined)),
               ),
             ).pipe(
@@ -150,7 +151,7 @@ function discover(fs: FSUtil.Interface, directory: string) {
   )
 }
 
-function decode(file: { directory: string; filepath: string; primary: boolean }, content: string) {
+function decode(file: { directory: string; filepath: string; primary: boolean }, content: string, isGlobal = false) {
   const markdown = ConfigMarkdown.parseOption(content)
   if (!markdown) return
   const name = path
@@ -158,6 +159,7 @@ function decode(file: { directory: string; filepath: string; primary: boolean },
     .replaceAll("\\", "/")
     .replace(/^(agent|agents|mode|modes)\//, "")
     .replace(/\.md$/, "")
+  if (isGlobal && !AgentV2.ROSTER.has(name)) return
   const body = markdown.content.trim()
   const legacy = Object.keys(markdown.data).some((key) => !agentKeys.has(key))
   const agent = Option.getOrUndefined(

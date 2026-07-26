@@ -9,6 +9,22 @@ export const ID = Agent.ID
 export type ID = typeof ID.Type
 export const defaultID = ID.make("build")
 
+// Keep in sync with AGENTS.md's Agent Roster section
+export const ROSTER: ReadonlySet<string> = new Set([
+  "build",
+  "plan",
+  "frontend",
+  "backend",
+  "documentation",
+  "orchestrator",
+  "chat",
+  "general",
+  "explore",
+  "compaction",
+  "title",
+  "summary",
+])
+
 export const Color = Agent.Color
 
 export const Info = Agent.Info

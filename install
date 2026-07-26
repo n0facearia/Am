@@ -432,48 +432,70 @@ if [ -n "${GITHUB_ACTIONS-}" ] && [ "${GITHUB_ACTIONS}" == "true" ]; then
 fi
 
 CONFIG_AGENTS_DIRS=(
-  "${HOME}/.config/opencode"
-  "${HOME}/.opencode"
+  "${HOME}/.config/am"
 )
 
 print_message info "${MUTED}Installing and syncing all agents, skills, commands, and assets...${NC}"
-
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 RAW_ZIP="/tmp/am-repo-$$.zip"
 EXTRACT_DIR="/tmp/am-repo-$$"
 mkdir -p "$EXTRACT_DIR"
+REPO_AM_ASSETS=""
 
-if curl -# -fL -o "$RAW_ZIP" "https://github.com/n0facearia/Am/archive/refs/heads/dev.zip" 2>/dev/null; then
-  if unzip -q "$RAW_ZIP" -d "$EXTRACT_DIR" 2>/dev/null; then
-    REPO_OPENCODE=$(find "$EXTRACT_DIR" -type d -name ".opencode" | head -n 1)
-    if [ -d "$REPO_OPENCODE" ]; then
-      for target in "${CONFIG_AGENTS_DIRS[@]}"; do
-        mkdir -p "$target"
-        cp -r "$REPO_OPENCODE"/* "$target/" 2>/dev/null || true
-        
-        # Ensure agents directory has all agent markdown files
-        mkdir -p "$target/agents" "$target/skills"
-        if [ -d "$REPO_OPENCODE/agents" ]; then
-          cp -r "$REPO_OPENCODE/agents"/* "$target/agents/" 2>/dev/null || true
-        fi
+ASSET_TAR="/tmp/am-assets-$$.tar.gz"
+ASSETS_URL="https://github.com/n0facearia/Am/releases/latest/download/am-assets.tar.gz"
 
-        if [ -d "$REPO_OPENCODE/skills" ]; then
-          cp -r "$REPO_OPENCODE/skills"/* "$target/skills/" 2>/dev/null || true
-        fi
+if curl -sSL -f --connect-timeout 5 -o "$ASSET_TAR" "$ASSETS_URL" 2>/dev/null; then
+  if tar -xzf "$ASSET_TAR" -C "$EXTRACT_DIR" 2>/dev/null; then
+    REPO_AM_ASSETS=$(find "$EXTRACT_DIR" -maxdepth 3 -type d -name ".opencode" | head -n 1)
+  fi
+fi
 
-        if [ -d "$REPO_OPENCODE/agents-context" ]; then
-          find "$REPO_OPENCODE/agents-context" -type f -name "SKILL.md" | while read -r skill_file; do
-            skill_parent=$(dirname "$skill_file")
-            skill_dir=$(basename "$skill_parent")
-            mkdir -p "$target/skills/$skill_dir"
-            cp -r "$skill_parent"/* "$target/skills/$skill_dir/" 2>/dev/null || true
-          done
-        fi
-      done
-      print_message info "✅ Synced all agents, skills, commands, and .md assets!"
+if [ -z "$REPO_AM_ASSETS" ] || [ ! -d "$REPO_AM_ASSETS" ]; then
+  if curl -sSL -f --connect-timeout 5 -o "$RAW_ZIP" "https://github.com/n0facearia/Am/archive/refs/heads/dev.zip" 2>/dev/null; then
+    if unzip -q "$RAW_ZIP" -d "$EXTRACT_DIR" 2>/dev/null; then
+      REPO_AM_ASSETS=$(find "$EXTRACT_DIR" -maxdepth 3 -type d -name ".opencode" | head -n 1)
     fi
   fi
-  rm -rf "$RAW_ZIP" "$EXTRACT_DIR"
 fi
+
+if [ -z "$REPO_AM_ASSETS" ] || [ ! -d "$REPO_AM_ASSETS" ]; then
+  if [ -d "$SCRIPT_DIR/.opencode" ]; then
+    REPO_AM_ASSETS="$SCRIPT_DIR/.opencode"
+  fi
+fi
+
+if [ -n "$REPO_AM_ASSETS" ] && [ -d "$REPO_AM_ASSETS" ]; then
+  for target in "${CONFIG_AGENTS_DIRS[@]}"; do
+    mkdir -p "$target"
+    cp -r "$REPO_AM_ASSETS"/* "$target/" 2>/dev/null || true
+    
+    # Ensure agents directory has all agent markdown files
+    mkdir -p "$target/agents" "$target/skills"
+    if [ -d "$REPO_AM_ASSETS/agents" ]; then
+      cp -r "$REPO_AM_ASSETS/agents"/* "$target/agents/" 2>/dev/null || true
+    fi
+    if [ -d "$REPO_AM_ASSETS/agent" ]; then
+      mkdir -p "$target/agent"
+      cp -r "$REPO_AM_ASSETS/agent"/* "$target/agent/" 2>/dev/null || true
+    fi
+
+    if [ -d "$REPO_AM_ASSETS/skills" ]; then
+      cp -r "$REPO_AM_ASSETS/skills"/* "$target/skills/" 2>/dev/null || true
+    fi
+
+    if [ -d "$REPO_AM_ASSETS/agents-context" ]; then
+      find "$REPO_AM_ASSETS/agents-context" -type f -name "SKILL.md" | while read -r skill_file; do
+        skill_parent=$(dirname "$skill_file")
+        skill_dir=$(basename "$skill_parent")
+        mkdir -p "$target/skills/$skill_dir"
+        cp -r "$skill_parent"/* "$target/skills/$skill_dir/" 2>/dev/null || true
+      done
+    fi
+  done
+  print_message success "Synced all custom agents, skills, commands, and assets!"
+fi
+rm -rf "$RAW_ZIP" "$EXTRACT_DIR"
 
 echo -e ""
 echo -e "  ${ORANGE}▄▀▄  █▄ ▄█${NC}"

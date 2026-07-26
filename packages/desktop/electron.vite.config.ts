@@ -12,7 +12,22 @@ const channel = (() => {
   return "dev"
 })()
 
-const nodePtyPkg = `@lydell/node-pty-${process.platform}-${process.arch}`
+const targetOS = (() => {
+  const rust = process.env.RUST_TARGET ?? ""
+  if (rust.includes("apple-darwin")) return "darwin"
+  if (rust.includes("linux")) return "linux"
+  if (rust.includes("windows")) return "win32"
+  return process.env.TARGET_PLATFORM || process.env.npm_config_platform || process.platform
+})()
+
+const targetArch = (() => {
+  const rust = process.env.RUST_TARGET ?? ""
+  if (rust.startsWith("aarch64")) return "arm64"
+  if (rust.startsWith("x86_64")) return "x64"
+  return process.env.TARGET_ARCH || process.env.npm_config_arch || process.arch
+})()
+
+const nodePtyPkg = `@lydell/node-pty-${targetOS}-${targetArch}`
 
 const sentry =
   process.env.SENTRY_AUTH_TOKEN && process.env.SENTRY_ORG && process.env.SENTRY_PROJECT

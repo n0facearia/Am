@@ -27,7 +27,7 @@ AM is a fork of [OpenCode](https://github.com/anthropics/opencode) with its own 
    - Data & Databases: `~/.local/share/am/` (`am.db`, `am-{channel}.db`)
    - Configuration: `~/.config/am/` (`tui.json`, `config.json`)
    - State & Cache: `~/.local/state/am/`, `~/.cache/am/`
-2. **Standalone Installation & Distribution**: Custom one-line release installers (`install.sh`, `install-desktop.sh`, `install.ps1`) publish standalone binaries (`am-cli`, `am-desktop`) for Linux, macOS, and Windows with progress bars and desktop integration.
+2. **Standalone Installation & Distribution**: Custom one-line release installers (`install.sh`, `install-desktop.sh`, `install.ps1`) publish standalone binaries (`am-cli`, `am-desktop`) for Linux, macOS, and Windows with progress bars, desktop integration, and sub-second lightweight asset archive syncing (`am-assets.tar.gz`).
 3. **Structured Agent System**: AM provides pre-configured, permission-scoped primary agents and subagents tailored for structured multi-agent workflows:
    - **Primary Agents** (User-selectable in TUI / Desktop):
      - `build` — Default agent with full read/write/execution permissions.

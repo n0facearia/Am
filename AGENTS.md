@@ -159,3 +159,12 @@ const table = sqliteTable("session", {
 - Keep delivery vocabulary explicit. Prompts steer by default and promote at the next safe provider-turn boundary while the current drain requires continuation. An explicit `queue` input remains pending until the Session would otherwise become idle; promote one queued input at that boundary, then reevaluate continuation before promoting another. Promoting any new user input resets the selected agent's provider-turn allowance; a batch of steers resets it once.
 - Keep EventV2 replay owner claims separate from clustered Session execution ownership.
 - Keep the System Context algebra, registry, and built-ins in `src/system-context`; keep Context Source producers with their observed domains, and keep Session History selection plus Context Epoch persistence Session-owned.
+
+## Agent Roster
+
+<!-- Keep in sync with packages/core/src/agent.ts AgentV2.ROSTER -->
+The set of primary agents and subagents in this repository is closed and fixed:
+- **Primary Agents**: `build`, `plan`, `frontend`, `backend`, `documentation`, `orchestrator`, `chat`
+- **Subagents & Utility Agents**: `general`, `explore`, `compaction`, `title`, `summary`
+
+No new agent or subagent definitions may be created, ever, unless the user explicitly asks for a new agent by name in that session. This rule applies even if a task seems to call for a specialized agent — extend or reuse an existing agent's scope instead of creating a new one.

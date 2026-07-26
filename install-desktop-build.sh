@@ -4,7 +4,7 @@ set -euo pipefail
 # AM Desktop — one-command build & install for Linux
 # Usage: ./install-desktop.sh [--channel dev|beta|prod]
 
-CHANNEL="${OPENCODE_CHANNEL:-prod}"
+CHANNEL="${AM_CHANNEL:-${OPENCODE_CHANNEL:-prod}}"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -25,11 +25,11 @@ echo "    [1/3] Building web app..."
 
 # Step 2: Build the Electron shell (triggers prebuild → node binary + icons)
 echo "    [2/3] Building Electron app..."
-(cd "$DESKTOP_DIR" && OPENCODE_CHANNEL="$CHANNEL" bun run build)
+(cd "$DESKTOP_DIR" && AM_CHANNEL="$CHANNEL" OPENCODE_CHANNEL="$CHANNEL" bun run build)
 
 # Step 3: Package into AppImage
 echo "    [3/3] Packaging AppImage..."
-(cd "$DESKTOP_DIR" && OPENCODE_CHANNEL="$CHANNEL" bun run package:linux)
+(cd "$DESKTOP_DIR" && AM_CHANNEL="$CHANNEL" OPENCODE_CHANNEL="$CHANNEL" bun run package:linux)
 
 # Find the produced AppImage
 APPIMAGE=$(find "$DESKTOP_DIR/dist" -maxdepth 1 -name '*.AppImage' | head -1)

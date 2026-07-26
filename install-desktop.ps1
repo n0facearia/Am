@@ -36,34 +36,47 @@ try {
 
 # ---- Sync Agents, Skills, Commands & Assets ----
 $ConfigDirs = @(
-  (Join-Path $env:USERPROFILE ".config\opencode"),
-  (Join-Path $env:USERPROFILE ".opencode")
+  (Join-Path $env:USERPROFILE ".config\am")
 )
 
 $ProgressPreference = 'Continue'
 Write-Host "Downloading and syncing all agents, skills, commands, and assets..." -ForegroundColor Cyan
 
+$AssetsUrl = "https://github.com/$Repo/releases/latest/download/am-assets.zip"
+$AssetsZip = Join-Path $TmpDir "am-assets.zip"
 $ZipUrl = "https://github.com/$Repo/archive/refs/heads/dev.zip"
 $ZipFile = Join-Path $TmpDir "dev.zip"
 $ExtractPath = Join-Path $TmpDir "extracted"
 
 try {
-  Invoke-WebRequest -Uri $ZipUrl -OutFile $ZipFile -UseBasicParsing -ErrorAction SilentlyContinue
-  if (Test-Path $ZipFile) {
-    Expand-Archive -Path $ZipFile -DestinationPath $ExtractPath -Force -ErrorAction SilentlyContinue
-    $OpencodeFolder = Get-ChildItem -Path $ExtractPath -Recurse -Directory -Filter ".opencode" | Select-Object -First 1
-    if ($OpencodeFolder) {
+  Invoke-WebRequest -Uri $AssetsUrl -OutFile $AssetsZip -UseBasicParsing -TimeoutSec 5 -ErrorAction SilentlyContinue
+  if (Test-Path $AssetsZip) {
+    Expand-Archive -Path $AssetsZip -DestinationPath $ExtractPath -Force -ErrorAction SilentlyContinue
+  } else {
+    Invoke-WebRequest -Uri $ZipUrl -OutFile $ZipFile -UseBasicParsing -ErrorAction SilentlyContinue
+    if (Test-Path $ZipFile) {
+      Expand-Archive -Path $ZipFile -DestinationPath $ExtractPath -Force -ErrorAction SilentlyContinue
+    }
+  }
+  if (Test-Path $ExtractPath) {
+    $AmAssetsFolder = Get-ChildItem -Path $ExtractPath -Recurse -Directory -Filter ".opencode" | Select-Object -First 1
+    if ($AmAssetsFolder) {
       foreach ($target in $ConfigDirs) {
         New-Item -ItemType Directory -Path $target -Force | Out-Null
-        Copy-Item -Path "$($OpencodeFolder.FullName)\*" -Destination $target -Recurse -Force -ErrorAction SilentlyContinue
+        Copy-Item -Path "$($AmAssetsFolder.FullName)\*" -Destination $target -Recurse -Force -ErrorAction SilentlyContinue
         
         $AgentsTarget = Join-Path $target "agents"
         $SkillsTarget = Join-Path $target "skills"
         New-Item -ItemType Directory -Path $AgentsTarget -Force | Out-Null
         New-Item -ItemType Directory -Path $SkillsTarget -Force | Out-Null
 
-        if (Test-Path "$($OpencodeFolder.FullName)\agents") {
-          Copy-Item -Path "$($OpencodeFolder.FullName)\agents\*" -Destination $AgentsTarget -Recurse -Force -ErrorAction SilentlyContinue
+        if (Test-Path "$($AmAssetsFolder.FullName)\agents") {
+          Copy-Item -Path "$($AmAssetsFolder.FullName)\agents\*" -Destination $AgentsTarget -Recurse -Force -ErrorAction SilentlyContinue
+        }
+        if (Test-Path "$($AmAssetsFolder.FullName)\agent") {
+          $AgentTargetSingle = Join-Path $target "agent"
+          New-Item -ItemType Directory -Path $AgentTargetSingle -Force | Out-Null
+          Copy-Item -Path "$($AmAssetsFolder.FullName)\agent\*" -Destination $AgentTargetSingle -Recurse -Force -ErrorAction SilentlyContinue
         }
       }
       Write-Host "✅ Synced all agents, skills, commands, and assets!" -ForegroundColor Green
@@ -77,4 +90,4 @@ Remove-Item -Path $TmpDir -Recurse -Force -ErrorAction SilentlyContinue
 
 Write-Host ""
 Write-Host "✅ AM Desktop setup complete!" -ForegroundColor Green
-Write-Host "   Custom agents and skills configured in $env:USERPROFILE\.config\opencode & $env:USERPROFILE\.opencode"
+Write-Host "   Custom agents and skills configured in $env:USERPROFILE\.config\am"
