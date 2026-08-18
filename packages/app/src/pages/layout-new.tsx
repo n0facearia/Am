@@ -41,11 +41,7 @@ export default function NewLayout(props: ParentProps<{ serverScoped?: any }>) {
       }}
     >
       <Titlebar update={update} />
-
-
-
-
-      <main class="flex-1 min-h-0 min-w-0 overflow-x-hidden flex flex-col items-start contain-strict mt-8">
+      <main class="flex-1 min-h-0 min-w-0 w-full overflow-x-hidden flex flex-col contain-strict mt-8">
         {props.serverScoped}
         <Suspense fallback={<div class="flex-1" />}>{props.children}</Suspense>
       </main>

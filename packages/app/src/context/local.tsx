@@ -11,6 +11,7 @@ import { useSDK } from "./sdk"
 import { useSync } from "./sync"
 import { useServerSDK } from "./server-sdk"
 import { ScopedKey, type ServerScope } from "@/utils/server-scope"
+import { MODES } from "@/constants/modes"
 
 export type ModelKey = { providerID: string; modelID: string; variant?: string }
 
@@ -117,8 +118,14 @@ export const { use: useLocal, useOptional: useLocalOptional, provider: LocalProv
 
     const pickAgent = (name: string | undefined) => {
       const items = list()
-      if (items.length === 0) return
-      return items.find((item) => item.name === name) ?? items[0]
+      if (items.length === 0) {
+        if (name) return { name, mode: "primary" as const, permission: [], model: undefined, variant: undefined }
+        return
+      }
+      if (!name) return items[0]
+      const found = items.find((item) => item.name === name)
+      if (found) return found
+      return { name, mode: "primary" as const, permission: [], model: undefined, variant: undefined }
     }
 
     createEffect(() => {
@@ -128,6 +135,8 @@ export const { use: useLocal, useOptional: useLocalOptional, provider: LocalProv
         return
       }
       if (items.some((item) => item.name === store.current)) return
+      const allPredefined = Object.values(MODES).flat() as readonly string[]
+      if (store.current && allPredefined.includes(store.current)) return
       setStore("current", items[0]?.name)
     })
 
@@ -235,8 +244,14 @@ export const { use: useLocal, useOptional: useLocalOptional, provider: LocalProv
           
           const savedLLM = saved.agentLLMs?.[item.name]
 
+          const agentModeEntry = Object.entries(MODES).find(([, agents]) =>
+            (agents as readonly string[]).includes(item.name),
+          )
+          const targetMode = agentModeEntry ? agentModeEntry[0] : mode.current()
+          setStore("currentMode", targetMode)
+
           const next = {
-            mode: mode.current(),
+            mode: targetMode,
             agent: item.name,
             model: savedLLM?.model ?? item.model ?? prev?.model,
             variant: savedLLM?.variant ?? item.variant ?? prev?.variant,

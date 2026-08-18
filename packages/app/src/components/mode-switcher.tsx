@@ -32,6 +32,7 @@ export function ModeSwitcher() {
           const isActive = createMemo(() => active() === m.id)
           return (
             <button
+              type="button"
               onClick={() => {
                 local?.mode.set(m.id)
                 if (m.id === "chat") {
@@ -50,7 +51,7 @@ export function ModeSwitcher() {
                   }
                 }
               }}
-              class={`relative overflow-hidden px-4 py-1 rounded-[4px] text-xs font-semibold transition-colors duration-250 ${
+              class={`relative overflow-hidden px-4 py-1 rounded-[4px] text-xs font-semibold cursor-pointer transition-colors duration-250 ${
                 isActive()
                   ? "mode-tab-active shadow-sm"
                   : "text-v2-text-text-muted hover:text-v2-text-text-base hover:bg-v2-background-bg-layer-01"
